@@ -37,7 +37,7 @@ router = APIRouter()
     "",
     response_model=dict,
     summary="Execute search",
-    description="Search for leads across data sources",
+    description="Search for researchers across data sources",
 )
 async def execute_search(
     search_data: SearchCreate,
@@ -46,7 +46,7 @@ async def execute_search(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Execute a search for leads
+    Execute a search for researchers
 
     **Supported search types:**
     - `pubmed`: Search PubMed for researchers
@@ -61,7 +61,7 @@ async def execute_search(
     **Returns:**
     - `search_id`: ID of search record
     - `results_count`: Number of results found
-    - `leads_created`: Number of leads created
+    - `researchers_created`: Number of leads created
     - `execution_time_ms`: Time taken in milliseconds
     - `lead_ids`: IDs of created leads (if create_leads=true)
     """
@@ -79,7 +79,7 @@ async def execute_search(
             filters=search_data.filters,
             save_search=search_data.save_search,
             saved_name=search_data.saved_name,
-            create_leads=True,  # Always create leads for now
+            create_leads=True,  # Always create researchers for now
             max_results=50,
         )
 
@@ -94,7 +94,7 @@ async def execute_search(
 
         return {
             **results,
-            "message": f"Search completed. Found {results['results_count']} results, created {results['leads_created']} leads.",
+            "message": f"Search completed. Found {results['results_count']} results, created {results['researchers_created']} leads.",
         }
 
     except ValueError as e:
@@ -384,17 +384,17 @@ async def get_data_quality_metrics(
     db: AsyncSession = Depends(get_db),
 ):
     """Get quality health metrics for the current user's leads."""
-    from app.models.lead import Lead
+    from app.models.researcher import Researcher
 
     result = await db.execute(
-        select(Lead)
-        .where(Lead.user_id == current_user.id)
-        .order_by(Lead.created_at.desc())
+        select(Researcher)
+        .where(Researcher.user_id == current_user.id)
+        .order_by(Researcher.created_at.desc())
         .limit(limit)
     )
-    leads = result.scalars().all()
+    researchers = result.scalars().all()
 
-    if not leads:
+    if not researchers:
         return {
             "status": "no_leads",
             "total_sampled": 0,
@@ -408,8 +408,8 @@ async def get_data_quality_metrics(
     field_missing: Dict[str, int] = {}
     completeness_sum = 0.0
 
-    for lead in leads:
-        qr = quality_svc.check_existing_lead(lead)
+    for researcher in researchers:
+        qr = quality_svc.check_existing_lead(researcher)
         completeness_sum += qr.completeness
 
         if qr.passes:
@@ -423,7 +423,7 @@ async def get_data_quality_metrics(
             if not present:
                 field_missing[field_name] = field_missing.get(field_name, 0) + 1
 
-    total = len(leads)
+    total = len(researchers)
     avg_completeness = completeness_sum / total
     top_issues = sorted(issue_tally.items(), key=lambda item: item[1], reverse=True)
     top_missing = sorted(field_missing.items(), key=lambda item: item[1], reverse=True)

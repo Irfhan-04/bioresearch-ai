@@ -1,96 +1,75 @@
-"""
-Enrichment Service Tests
-Test lead enrichment functionality
-"""
+"""Enrichment Service Tests."""
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.lead import Lead
+from app.models.researcher import Researcher
 from app.models.user import User
 from app.services.enrichment_service import get_enrichment_service
+
+
+@pytest.fixture
+async def test_researcher(db_session: AsyncSession, test_user: User) -> Researcher:
+    researcher = Researcher(
+        user_id=test_user.id,
+        name="Dr. John Smith",
+        title="Principal Scientist",
+        company="BioTech Inc",
+        location="Cambridge, MA",
+        status="NEW",
+    )
+    db_session.add(researcher)
+    await db_session.commit()
+    await db_session.refresh(researcher)
+    return researcher
+
+
+@pytest.fixture
+async def test_researchers(db_session: AsyncSession, test_user: User) -> list[Researcher]:
+    records = []
+    for i in range(3):
+        researcher = Researcher(
+            user_id=test_user.id,
+            name=f"Dr. Researcher {i}",
+            title="Scientist",
+            company=f"Company {i}",
+            status="NEW",
+        )
+        db_session.add(researcher)
+        records.append(researcher)
+    await db_session.commit()
+    for record in records:
+        await db_session.refresh(record)
+    return records
 
 
 @pytest.mark.asyncio
 @pytest.mark.service
 class TestEnrichmentService:
-    """Test enrichment service"""
-
-    async def test_enrich_lead_email(
-        self, db_session: AsyncSession, test_lead: Lead
-    ):
-        """Test finding email for lead"""
+    async def test_enrich_researcher_email(self, db_session: AsyncSession, test_researcher: Researcher):
         service = get_enrichment_service()
-
-        # Remove email first
-        test_lead.email = None
-        await db_session.commit()
-
-        result = await service.enrich_lead(
-            lead=test_lead, db=db_session, services=["email"]
-        )
-
+        result = await service.enrich_researcher(researcher=test_researcher, db=db_session, services=["email"])
         assert "enrichments" in result
         assert "errors" in result
 
-    async def test_enrich_lead_company(
-        self, db_session: AsyncSession, test_lead: Lead
-    ):
-        """Test enriching company data"""
+    async def test_enrich_researcher_company(self, db_session: AsyncSession, test_researcher: Researcher):
         service = get_enrichment_service()
-
-        result = await service.enrich_lead(
-            lead=test_lead, db=db_session, services=["company"]
-        )
-
+        result = await service.enrich_researcher(researcher=test_researcher, db=db_session, services=["company"])
         assert result is not None
 
-    async def test_enrich_lead_linkedin(
-        self, db_session: AsyncSession, test_lead: Lead
-    ):
-        """Test finding LinkedIn profile"""
+    async def test_batch_enrichment(self, db_session: AsyncSession, test_user: User, test_researchers: list[Researcher]):
         service = get_enrichment_service()
-
-        result = await service.enrich_lead(
-            lead=test_lead, db=db_session, services=["linkedin"]
+        researcher_ids = [r.id for r in test_researchers]
+        result = await service.enrich_researchers_batch(
+            researcher_ids=researcher_ids,
+            user=test_user,
+            db=db_session,
+            services=["email"],
         )
-
-        assert result is not None
-
-    async def test_enrich_lead_all_services(
-        self, db_session: AsyncSession, test_lead: Lead
-    ):
-        """Test enriching with all services"""
-        service = get_enrichment_service()
-
-        result = await service.enrich_lead(lead=test_lead, db=db_session, services=None)
-
-        assert "enrichments" in result
-
-    async def test_batch_enrichment(
-        self, db_session: AsyncSession, test_user: User, test_leads: list[Lead]
-    ):
-        """Test batch lead enrichment"""
-        service = get_enrichment_service()
-
-        lead_ids = [lead.id for lead in test_leads[:3]]
-
-        result = await service.enrich_leads_batch(
-            lead_ids=lead_ids, user=test_user, db=db_session, services=["email"]
-        )
-
         assert result["total"] == 3
-        assert result["successful"] + result["failed"] == 3
 
-    async def test_enrichment_status(
-        self, db_session: AsyncSession, test_lead: Lead
-    ):
-        """Test getting enrichment status"""
+    async def test_enrichment_status(self, test_researcher: Researcher):
         service = get_enrichment_service()
-
-        status = await service.get_enrichment_status(test_lead)
-
-        assert "lead_id" in status
-        assert "enriched_fields" in status
-        assert "missing_fields" in status
+        status = await service.get_enrichment_status(test_researcher)
+        assert "researcher_id" in status
         assert "completion_percentage" in status

@@ -3,28 +3,22 @@ User Management Endpoints
 Profile, preferences, API keys, usage statistics
 """
 
-from datetime import date, datetime
-import calendar
+from datetime import datetime
 from typing import List
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import func as sa_func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.cache import Cache, CacheKey
 from app.core.deps import get_current_active_user, get_db
 from app.core.security import (generate_api_key, get_password_hash,
                                hash_api_key, verify_password)
-from app.models.usage import UsageEvent, UsageEventType
 from app.models.user import User
-from app.schemas.base import MessageResponse, SuccessResponse
+from app.schemas.base import MessageResponse
 from app.schemas.token import APIKeyCreate, APIKeyList, APIKeyResponse
-from app.schemas.usage import UsageSummary
 from app.schemas.user import (DeleteAccountRequest, PasswordChange, UserPreferences, UserProfile,
                               UserUpdate)
-from app.services.tier_quota_service import TierQuotaService
-from app.core.config import settings
 
 router = APIRouter()
 
@@ -192,104 +186,6 @@ async def update_preferences(
     await db.commit()
 
     return current_prefs
-
-
-# ============================================================================
-# USAGE STATISTICS
-# ============================================================================
-
-
-@router.get(
-    "/me/usage",
-    response_model=UsageSummary,
-    summary="Get monthly usage statistics",
-)
-async def get_usage_stats(
-    current_user: User = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """Return usage for the current billing month alongside quota data."""
-    today = date.today()
-    period_start = date(today.year, today.month, 1)
-    last_day = calendar.monthrange(today.year, today.month)[1]
-    period_end = date(today.year, today.month, last_day)
-    if today.month == 12:
-        next_period_start = date(today.year + 1, 1, 1)
-    else:
-        next_period_start = date(today.year, today.month + 1, 1)
-
-    result = await db.execute(
-        select(UsageEvent.event_type, sa_func.sum(UsageEvent.quantity).label("total"))
-        .where(
-            UsageEvent.user_id == current_user.id,
-            UsageEvent.occurred_at >= period_start,
-            UsageEvent.occurred_at < next_period_start,
-        )
-        .group_by(UsageEvent.event_type)
-    )
-    rows = {row.event_type: int(row.total) for row in result}
-
-    limit = current_user.get_monthly_lead_limit()
-    leads_created = rows.get(UsageEventType.LEAD_CREATED, 0)
-
-    return UsageSummary(
-        period_start=str(period_start),
-        period_end=str(period_end),
-        leads_created=leads_created,
-        leads_enriched=rows.get(UsageEventType.LEAD_ENRICHED, 0),
-        searches_run=rows.get(UsageEventType.SEARCH_EXECUTED, 0),
-        exports_made=rows.get(UsageEventType.EXPORT_GENERATED, 0),
-        api_calls_total=rows.get(UsageEventType.API_CALL, 0),
-        pipeline_runs=rows.get(UsageEventType.PIPELINE_RUN, 0),
-        tier=str(current_user.subscription_tier),
-        leads_limit=limit,
-        leads_remaining=max(0, limit - leads_created),
-        quota_pct_used=round((leads_created / limit) * 100, 1) if limit else 0,
-    )
-
-
-@router.get("/me/subscription", summary="Get subscription details")
-async def get_subscription(current_user: User = Depends(get_current_active_user)):
-    limits = TierQuotaService.get_tier_limits(str(current_user.subscription_tier))
-    return {
-        "tier": str(current_user.subscription_tier),
-        "limits": limits,
-        "upgrade_url": f"{settings.FRONTEND_URL}/settings/billing",
-        "tiers": {
-            "free": {"price_usd": 0, "leads": 100},
-            "pro": {"price_usd": 49, "leads": 1000},
-            "team": {"price_usd": 199, "leads": 5000},
-            "enterprise": {"price_usd": None, "leads": "unlimited"},
-        },
-    }
-
-
-@router.patch(
-    "/{user_id}/tier",
-    response_model=MessageResponse,
-    summary="[Admin] Update user tier",
-)
-async def admin_update_tier(
-    user_id: UUID,
-    tier: str,
-    current_user: User = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_db),
-):
-    if not current_user.is_superuser:
-        raise HTTPException(403, "Superuser access required")
-
-    valid_tiers = {"free", "pro", "team", "enterprise"}
-    if tier not in valid_tiers:
-        raise HTTPException(400, f"tier must be one of {valid_tiers}")
-
-    user = (await db.execute(select(User).where(User.id == user_id))).scalar_one_or_none()
-    if not user:
-        raise HTTPException(404, "User not found")
-
-    user.subscription_tier = tier
-    await db.commit()
-    return {"message": f"User tier updated to {tier}"}
-
 
 
 # ============================================================================

@@ -96,7 +96,7 @@ class CompanyEnricher:
         }
 
     async def _should_call_clearbit(self, lead: Lead, quota_manager: "QuotaManager") -> bool:
-        from app.services.email_finder import _get_institution_type
+        from app.services.contact_service import _get_institution_type
 
         if _get_institution_type(lead) == "academic":
             return False
