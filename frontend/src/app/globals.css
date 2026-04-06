@@ -1,0 +1,138 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@300;400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222 47% 4%;
+    --foreground: 210 40% 96%;
+    --card: 220 45% 6%;
+    --card-foreground: 210 40% 96%;
+    --popover: 220 45% 6%;
+    --popover-foreground: 210 40% 96%;
+    --primary: 162 100% 42%;
+    --primary-foreground: 222 47% 4%;
+    --secondary: 220 35% 10%;
+    --secondary-foreground: 210 40% 80%;
+    --muted: 220 35% 10%;
+    --muted-foreground: 215 20% 45%;
+    --accent: 162 80% 35%;
+    --accent-foreground: 210 40% 96%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 220 30% 12%;
+    --input: 220 35% 9%;
+    --ring: 162 100% 42%;
+    --radius: 0.5rem;
+    --teal: #00d68f;
+    --teal-dim: rgba(0, 214, 143, 0.1);
+    --teal-border: rgba(0, 214, 143, 0.22);
+    --glow-sm: 0 0 12px rgba(0, 214, 143, 0.2);
+    --glow-md: 0 0 24px rgba(0, 214, 143, 0.3);
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+
+  html { color-scheme: dark; }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'DM Sans', sans-serif;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+    background-color: hsl(222, 47%, 4%);
+    background-image:
+      linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px);
+    background-size: 44px 44px;
+    background-attachment: fixed;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Syne', sans-serif;
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer utilities {
+  .font-syne  { font-family: 'Syne', sans-serif; }
+  .font-mono-dm { font-family: 'DM Mono', monospace; font-feature-settings: 'tnum' 1; }
+
+  .glass {
+    background: rgba(10, 16, 32, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.055);
+  }
+  .glass-card {
+    background: rgba(11, 18, 36, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(0, 214, 143, 0.1);
+    box-shadow: 0 4px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+
+  .nav-active {
+    background: var(--teal-dim);
+    border: 1px solid var(--teal-border);
+    color: var(--teal);
+    box-shadow: var(--glow-sm), inset 0 1px 0 rgba(0, 214, 143, 0.08);
+  }
+
+  .glow-teal     { box-shadow: var(--glow-sm); }
+  .glow-teal-md  { box-shadow: var(--glow-md); }
+  .text-teal-glow { text-shadow: 0 0 16px rgba(0, 214, 143, 0.45); }
+
+  .gradient-text {
+    background: linear-gradient(135deg, #00d68f 0%, #00c2ff 60%, #a78bfa 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .stat-line::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(0,214,143,0.45), transparent);
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes pulseGlow {
+    0%,100% { box-shadow: 0 0 8px rgba(0,214,143,0.18); }
+    50%     { box-shadow: 0 0 26px rgba(0,214,143,0.42); }
+  }
+  @keyframes scanMove {
+    0%   { transform: translateY(-100%); }
+    100% { transform: translateY(100vh); }
+  }
+
+  .animate-fade-up   { animation: fadeUp  0.5s ease both; }
+  .animate-fade-in   { animation: fadeIn  0.4s ease both; }
+  .animate-pulse-glow{ animation: pulseGlow 3s ease-in-out infinite; }
+  .delay-100 { animation-delay: 0.1s; }
+  .delay-200 { animation-delay: 0.2s; }
+  .delay-300 { animation-delay: 0.3s; }
+  .delay-400 { animation-delay: 0.4s; }
+  .delay-500 { animation-delay: 0.5s; }
+
+  .scrollbar-thin::-webkit-scrollbar       { width: 4px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(0, 214, 143, 0.2);
+    border-radius: 9999px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 214, 143, 0.4);
+  }
+}

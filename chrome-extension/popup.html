@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Biotech Lead Generator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, sans-serif; width: 300px; padding: 18px; background: #f8fafc; }
+    h2 { color: #667eea; font-size: 15px; margin-bottom: 14px; }
+    .card { background: #fff; border-radius: 8px; padding: 14px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0, 0, 0, .1); }
+    label { font-size: 10px; color: #888; display: block; margin-bottom: 3px; text-transform: uppercase; font-weight: 600; }
+    input { width: 100%; border: 1px solid #e2e8f0; border-radius: 6px; padding: 7px 9px; font-size: 13px; }
+    input:focus { outline: none; border-color: #667eea; }
+    button { width: 100%; background: #667eea; color: #fff; border: none; border-radius: 6px; padding: 9px; font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 7px; }
+    button:hover { background: #5a67d8; }
+    .status { font-size: 11px; text-align: center; margin-top: 6px; }
+    .ok { color: #16a34a; }
+    .err { color: #dc2626; }
+    #user-email { font-weight: 600; color: #667eea; font-size: 13px; margin: 4px 0 10px; }
+    .hint { font-size: 11px; color: #666; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <h2>🎯 Biotech Lead Generator</h2>
+  <div id="sign-in" class="card" style="display:none">
+    <label>API Base URL</label>
+    <input id="api-base" type="text" placeholder="http://localhost:8000" />
+    <label style="margin-top:9px">JWT Token</label>
+    <input id="token" type="password" placeholder="Paste your Bearer token" />
+    <button id="sign-in-btn">Sign In</button>
+    <p class="status" id="sign-in-msg"></p>
+  </div>
+  <div id="signed-in" class="card" style="display:none">
+    <p style="font-size:11px;color:#888">Signed in as</p>
+    <p id="user-email">—</p>
+    <p class="hint">Navigate to a LinkedIn profile and click the <strong>🎯 Add Lead</strong> button.</p>
+    <button id="sign-out-btn" style="background:#dc2626;margin-top:10px">Sign Out</button>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
