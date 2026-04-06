@@ -17,7 +17,6 @@ from pydantic_settings import (
     SettingsConfigDict,
 )
 
-
 def get_ipv4_address(hostname: str) -> str:
     """
     Resolve hostname to IPv4 address to avoid IPv6 issues
@@ -37,7 +36,6 @@ def get_ipv4_address(hostname: str) -> str:
 
     return hostname
 
-
 class CommaSeparatedOriginsMixin:
     def prepare_field_value(self, field_name: str, field, value, value_is_complex: bool):
         if field_name == "BACKEND_CORS_ORIGINS" and isinstance(value, str):
@@ -54,16 +52,15 @@ class SettingsEnvSource(CommaSeparatedOriginsMixin, EnvSettingsSource):
 class SettingsDotEnvSource(CommaSeparatedOriginsMixin, DotEnvSettingsSource):
     pass
 
-
 class Settings(BaseSettings):
     """
     Application settings loaded from environment variables
     """
 
     # App Info
-    APP_NAME: str = "Biotech Lead Generator API"
-    APP_VERSION: str = "2.0.0"
-    APP_DESCRIPTION: str = "Production API for biotech lead generation"
+    APP_NAME: str = "BioResearch AI"
+    APP_VERSION: str = "1.0.0"
+    APP_DESCRIPTION: str = "AI-powered biotech research intelligence"
     API_V1_PREFIX: str = "/api/v1"
     DEBUG: bool = False
 
@@ -130,34 +127,12 @@ class Settings(BaseSettings):
     REDIS_CACHE_TTL: int = 3600
     REDIS_SESSION_TTL: int = 86400
 
-    # Stripe
-    STRIPE_SECRET_KEY: str = ""
-    STRIPE_PUBLISHABLE_KEY: str = ""
-    STRIPE_WEBHOOK_SECRET: str = ""
-    STRIPE_PRO_PRICE_ID: str = ""
-    STRIPE_TEAM_PRICE_ID: str = ""
-    STRIPE_SUCCESS_URL: str = (
-        "http://localhost:3000/settings/billing?session_id={CHECKOUT_SESSION_ID}"
-    )
-    STRIPE_CANCEL_URL: str = (
-        "http://localhost:3000/settings/billing?cancelled=true"
-    )
-
-    # Celery
-    CELERY_BROKER_URL: str
-    CELERY_RESULT_BACKEND: str
-
     # Email - Resend
     RESEND_API_KEY: str
     RESEND_FROM_EMAIL: str = "noreply@yourdomain.com"
 
     # Object Storage
     SUPABASE_STORAGE_BUCKET: str = "exports"
-
-    # Monitoring - Sentry
-    SENTRY_DSN: Optional[str] = None
-    SENTRY_ENVIRONMENT: str = "production"
-    SENTRY_TRACES_SAMPLE_RATE: float = 0.1
 
     # External APIs — PubMed / NCBI Entrez
     PUBMED_EMAIL: str
@@ -171,7 +146,6 @@ class Settings(BaseSettings):
     GOOGLE_CSE_API_KEY: Optional[str] = None
     GOOGLE_CSE_ID: Optional[str] = None
 
-    PROXYCURL_API_KEY: Optional[str] = None
     # Hunter.io — Email finding (FREE: 25 searches/month, no credit card)
     # Get key: https://hunter.io → Sign up free → Dashboard → API
     # Used ONLY for leads with propensity_score >= 70 (HIGH tier)
@@ -186,19 +160,6 @@ class Settings(BaseSettings):
     # Enrichment quota thresholds (change to tune API spend)
     HUNTER_MIN_SCORE_FOR_API: int = 70
     CLEARBIT_MIN_SCORE_FOR_API: int = 50
-
-    # Stripe billing
-    STRIPE_SECRET_KEY: str = ""
-    STRIPE_PUBLISHABLE_KEY: str = ""
-    STRIPE_WEBHOOK_SECRET: str = ""
-    STRIPE_PRO_PRICE_ID: str = ""
-    STRIPE_TEAM_PRICE_ID: str = ""
-    STRIPE_SUCCESS_URL: str = (
-        "http://localhost:3000/settings/billing?session_id={CHECKOUT_SESSION_ID}"
-    )
-    STRIPE_CANCEL_URL: str = (
-        "http://localhost:3000/settings/billing?cancelled=true"
-    )
 
     # Rate Limiting
     RATE_LIMIT_PER_MINUTE: int = 60
@@ -323,17 +284,6 @@ def get_supabase_client():
     from supabase import create_client
 
     return create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
-
-
-def is_production() -> bool:
-    """Check if running in production"""
-    return settings.SENTRY_ENVIRONMENT == "production"
-
-
-def is_development() -> bool:
-    """Check if running in development"""
-    return settings.DEBUG or settings.SENTRY_ENVIRONMENT == "development"
-
 
 # Export settings
 __all__ = [

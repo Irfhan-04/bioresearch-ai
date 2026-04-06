@@ -1,5 +1,5 @@
 """
-Lead Model - The core entity representing potential customers
+Researcher Model - The core entity representing potential customers
 """
 
 import uuid
@@ -13,14 +13,14 @@ from sqlalchemy.sql import func
 from app.core.database import Base
 
 
-class Lead(Base):
+class Researcher(Base):
     """
-    Lead model representing potential customers
+    Researcher model representing potential customers
 
     Attributes:
-        id: Unique lead identifier
-        user_id: Owner of this lead (foreign key to users)
-        name: Full name of the lead
+        id: Unique researcher identifier
+        user_id: Owner of this researcher (foreign key to users)
+        name: Full name of the researcher
         title: Job title
         company: Company name
         location: Personal location (could be remote)
@@ -31,9 +31,9 @@ class Lead(Base):
         twitter_url: Twitter/X profile URL
         website: Personal or company website
 
-        propensity_score: Calculated score (0-100)
-        rank: Relative ranking among all leads
-        priority_tier: HIGH, MEDIUM, or LOW
+        relevance_score: Calculated score (0-100)
+        rank: Relative ranking among all researchers
+        relevance_tier: HIGH, MEDIUM, or LOW
 
         recent_publication: Whether they published recently
         publication_year: Most recent publication year
@@ -50,14 +50,14 @@ class Lead(Base):
 
         tags: Array of user-defined tags
         notes: Internal notes
-        status: Lead status (NEW, CONTACTED, QUALIFIED, etc.)
+        status: Researcher status (NEW, CONTACTED, QUALIFIED, etc.)
 
-        last_contacted_at: When lead was last contacted
-        created_at: When lead was added
+        last_contacted_at: When researcher was last contacted
+        created_at: When researcher was added
         updated_at: Last update timestamp
     """
 
-    __tablename__ = "leads"
+    __tablename__ = "researchers"
 
     # Primary Key
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
@@ -99,9 +99,9 @@ class Lead(Base):
     website = Column(String(500), nullable=True)
 
     # Scoring
-    propensity_score = Column(Integer, nullable=True, index=True)
+    relevance_score = Column(Integer, nullable=True, index=True)
     rank = Column(Integer, nullable=True, index=True)
-    priority_tier = Column(String(20), nullable=True)  # HIGH, MEDIUM, LOW
+    relevance_tier = Column(String(20), nullable=True)  # HIGH, MEDIUM, LOW
 
     # Publication Information
     recent_publication = Column(Boolean, default=False)
@@ -156,45 +156,45 @@ class Lead(Base):
     )
 
     # Relationships
-    user = relationship("User", back_populates="leads")
-    team = relationship("Team", back_populates="leads")
+    user = relationship("User", back_populates="researchers")
+    team = relationship("Team", back_populates="researchers")
     assignee = relationship("User", foreign_keys=[assigned_to])
 
     # Indexes for common queries
     __table_args__ = (
         # Composite index for filtering by user and score
-        # Index('ix_leads_user_score', 'user_id', 'propensity_score'),
+        # Index('ix_researchers_user_score', 'user_id', 'relevance_score'),
         # Composite index for filtering by user and status
-        # Index('ix_leads_user_status', 'user_id', 'status'),
+        # Index('ix_researchers_user_status', 'user_id', 'status'),
     )
 
     def __repr__(self):
-        return f"<Lead(id={self.id}, name={self.name}, company={self.company}, score={self.propensity_score})>"
+        return f"<Researcher(id={self.id}, name={self.name}, company={self.company}, score={self.relevance_score})>"
 
     # Helper Methods
-    def get_priority_tier(self) -> str:
+    def get_relevance_tier(self) -> str:
         """
-        Get priority tier based on propensity score
+        Get priority tier based on relevance score
         """
-        if self.propensity_score is None:
+        if self.relevance_score is None:
             return "UNSCORED"
 
-        if self.propensity_score >= 70:
+        if self.relevance_score >= 70:
             return "HIGH"
-        elif self.propensity_score >= 50:
+        elif self.relevance_score >= 50:
             return "MEDIUM"
         else:
             return "LOW"
 
-    def update_priority_tier(self):
+    def update_relevance_tier(self):
         """
-        Update the priority_tier field based on current score
+        Update the relevance_tier field based on current score
         """
-        self.priority_tier = self.get_priority_tier()
+        self.relevance_tier = self.get_relevance_tier()
 
     def add_tag(self, tag: str):
         """
-        Add a tag to the lead
+        Add a tag to the researcher
         """
         if not self.tags:
             self.tags = []
@@ -204,20 +204,20 @@ class Lead(Base):
 
     def remove_tag(self, tag: str):
         """
-        Remove a tag from the lead
+        Remove a tag from the researcher
         """
         if self.tags and tag in self.tags:
             self.tags.remove(tag)
 
     def has_tag(self, tag: str) -> bool:
         """
-        Check if lead has a specific tag
+        Check if researcher has a specific tag
         """
         return tag in (self.tags or [])
 
     def add_data_source(self, source: str):
         """
-        Add a data source to the lead
+        Add a data source to the researcher
         """
         if not self.data_sources:
             self.data_sources = []
@@ -257,7 +257,7 @@ class Lead(Base):
 
     def to_dict(self) -> dict:
         """
-        Convert lead to dictionary (useful for exports)
+        Convert researcher to dictionary (useful for exports)
         """
         return {
             "id": str(self.id),
@@ -269,9 +269,9 @@ class Lead(Base):
             "email": self.email,
             "phone": self.phone,
             "linkedin_url": self.linkedin_url,
-            "propensity_score": self.propensity_score,
+            "relevance_score": self.relevance_score,
             "rank": self.rank,
-            "priority_tier": self.priority_tier,
+            "relevance_tier": self.relevance_tier,
             "recent_publication": self.recent_publication,
             "publication_title": self.publication_title,
             "publication_year": self.publication_year,

@@ -27,21 +27,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ── Paths that should NOT count as API calls ──────────────────────────────────
-# Exact path matches and prefixes are both supported.
-_SKIP_API_CALL_PATHS = frozenset({
-    "/",
-    "/health",
-    "/docs",
-    "/redoc",
-    f"{settings.API_V1_PREFIX}/openapi.json",
-})
-_SKIP_API_CALL_PREFIXES = (
-    "/docs",
-    "/redoc",
-    "/openapi",
-)
-
 
 # ============================================================================
 # LIFESPAN EVENTS
@@ -51,7 +36,7 @@ _SKIP_API_CALL_PREFIXES = (
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan events — startup and shutdown."""
-    logger.info("Starting Biotech Lead Generator API...")
+    logger.info("Starting BioResearch AI...")
     logger.info(f"Environment: {settings.SENTRY_ENVIRONMENT}")
     logger.info(f"Debug mode: {settings.DEBUG}")
 
@@ -71,19 +56,6 @@ async def lifespan(app: FastAPI):
         logger.info("✅ Redis connection established")
     except Exception as e:
         logger.error(f"❌ Redis connection failed: {e}")
-
-    if settings.SENTRY_DSN:
-        import sentry_sdk
-        from sentry_sdk.integrations.fastapi import FastApiIntegration
-        from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
-
-        sentry_sdk.init(
-            dsn=settings.SENTRY_DSN,
-            environment=settings.SENTRY_ENVIRONMENT,
-            traces_sample_rate=settings.SENTRY_TRACES_SAMPLE_RATE,
-            integrations=[FastApiIntegration(), SqlalchemyIntegration()],
-        )
-        logger.info("✅ Sentry monitoring initialized")
 
     logger.info("🚀 API is ready!")
     yield
@@ -177,94 +149,6 @@ async def add_security_headers(request: Request, call_next):
     return response
 
 
-@app.middleware("http")
-async def record_api_call(request: Request, call_next):
-    """
-    Record one API_CALL UsageEvent for every authenticated request to /api/v1/*.
-
-    Strategy
-    --------
-    • Only fires for paths under API_V1_PREFIX — skips health, docs, root.
-    • Extracts user_id from JWT via a lightweight decode (no DB hit).
-    • Writes the UsageEvent AFTER call_next() so only successful calls count.
-      (If auth middleware already rejected the request, we never write a row.)
-    • Uses fire-and-forget (asyncio.create_task) so recording never adds
-      latency to the response.
-    • Errors in recording are caught and logged — they never surface to the client.
-
-    Why middleware instead of per-endpoint?
-    • 11 endpoints × future endpoints = maintenance burden.
-    • Middleware guarantees 100% coverage including routes added in Phase 2.5+.
-    """
-    path = request.url.path
-
-    # Only track /api/v1/* paths
-    if not path.startswith(settings.API_V1_PREFIX):
-        return await call_next(request)
-
-    # Skip non-user-facing paths
-    if path in _SKIP_API_CALL_PATHS or path.startswith(_SKIP_API_CALL_PREFIXES):
-        return await call_next(request)
-
-    # Extract JWT without hitting the DB
-    user_id = _extract_user_id_from_request(request)
-
-    # Execute the actual endpoint
-    response = await call_next(request)
-
-    # Only record if the request was authenticated (user found) and succeeded
-    # (2xx or 4xx business errors — exclude 401/403 which mean no valid session)
-    if user_id and response.status_code not in (401, 403):
-        import asyncio
-        asyncio.create_task(_write_api_call_event(user_id, path, request.method))
-
-    return response
-
-
-def _extract_user_id_from_request(request: Request):
-    """
-    Decode JWT from Authorization header to extract user_id.
-    Returns None if header is absent or token is malformed.
-    Does NOT verify expiry or signature — auth middleware already did that.
-    """
-    auth_header = request.headers.get("Authorization", "")
-    if not auth_header.startswith("Bearer "):
-        return None
-
-    token = auth_header[len("Bearer "):]
-    try:
-        from jose import jwt as jose_jwt
-        # Decode without verification — we only need the payload user_id
-        payload = jose_jwt.get_unverified_claims(token)
-        return payload.get("sub")
-    except Exception:
-        return None
-
-
-async def _write_api_call_event(user_id: str, path: str, method: str) -> None:
-    """
-    Write a single API_CALL UsageEvent row.
-    Runs as a background task — any exception is caught and logged.
-    """
-    try:
-        from uuid import UUID
-        from app.core.database import AsyncSessionLocal
-        from app.models.usage import UsageEventType
-        from app.services.usage_service import UsageService
-
-        async with AsyncSessionLocal() as db:
-            await UsageService.record(
-                db=db,
-                user_id=UUID(user_id),
-                event_type=UsageEventType.API_CALL,
-                quantity=1,
-                metadata={"path": path, "method": method},
-            )
-            await db.commit()
-    except Exception as exc:
-        logger.warning("record_api_call background task failed: %s", exc)
-
-
 # ============================================================================
 # EXCEPTION HANDLERS
 # ============================================================================
@@ -318,7 +202,7 @@ async def general_exception_handler(request: Request, exc: Exception):
 @app.get("/", tags=["Root"], summary="API Root")
 async def root():
     return {
-        "message": "Welcome to Biotech Lead Generator API",
+        "message": "BioResearch AI — Biotech Research Intelligence API",
         "version": settings.APP_VERSION,
         "docs": "/docs",
         "health": "/health",

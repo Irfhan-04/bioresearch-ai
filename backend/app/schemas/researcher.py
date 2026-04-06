@@ -16,7 +16,7 @@ from app.schemas.base import (BaseSchema, PaginationParams, SortParams,
 # ============================================================================
 
 
-class LeadCreate(BaseModel):
+class ResearcherCreate(BaseModel):
     """
     Create new lead
     """
@@ -105,7 +105,7 @@ class LeadCreate(BaseModel):
     }
 
 
-class LeadUpdate(BaseModel):
+class ResearcherUpdate(BaseModel):
     """
     Update existing lead
     """
@@ -167,7 +167,7 @@ class LeadUpdate(BaseModel):
 # ============================================================================
 
 
-class LeadBase(BaseSchema):
+class ResearcherBase(BaseSchema):
     """
     Base lead information
     """
@@ -178,9 +178,9 @@ class LeadBase(BaseSchema):
     company: Optional[str] = None
     location: Optional[str] = None
     email: Optional[str] = None
-    propensity_score: Optional[int] = None
+    relevance_score: Optional[int] = None
     rank: Optional[int] = None
-    priority_tier: Optional[str] = None
+    relevance_tier: Optional[str] = None
     status: str
 
     model_config = {
@@ -192,16 +192,16 @@ class LeadBase(BaseSchema):
                 "company": "Moderna Therapeutics",
                 "location": "Cambridge, MA",
                 "email": "sarah.mitchell@modernatx.com",
-                "propensity_score": 95,
+                "relevance_score": 95,
                 "rank": 1,
-                "priority_tier": "HIGH",
+                "relevance_tier": "HIGH",
                 "status": "NEW",
             }
         }
     }
 
 
-class LeadDetail(TimestampSchema):
+class ResearcherDetail(TimestampSchema):
     """
     Detailed lead information
     """
@@ -212,9 +212,9 @@ class LeadDetail(TimestampSchema):
     company: Optional[str] = None
     location: Optional[str] = None
     email: Optional[str] = None
-    propensity_score: Optional[int] = None
+    relevance_score: Optional[int] = None
     rank: Optional[int] = None
-    priority_tier: Optional[str] = None
+    relevance_tier: Optional[str] = None
     status: str
 
     company_hq: Optional[str] = None
@@ -253,9 +253,9 @@ class LeadDetail(TimestampSchema):
                 "email": "sarah.mitchell@modernatx.com",
                 "phone": "+1-555-0123",
                 "linkedin_url": "https://linkedin.com/in/sarahmitchell",
-                "propensity_score": 95,
+                "relevance_score": 95,
                 "rank": 1,
-                "priority_tier": "HIGH",
+                "relevance_tier": "HIGH",
                 "status": "NEW",
                 "recent_publication": True,
                 "publication_year": 2024,
@@ -272,7 +272,7 @@ class LeadDetail(TimestampSchema):
     }
 
 
-class LeadList(BaseModel):
+class ResearcherList(BaseModel):
     """
     Simplified lead for list view
     """
@@ -282,8 +282,8 @@ class LeadList(BaseModel):
     title: Optional[str] = None
     company: Optional[str] = None
     email: Optional[str] = None
-    propensity_score: Optional[int] = None
-    priority_tier: Optional[str] = None
+    relevance_score: Optional[int] = None
+    relevance_tier: Optional[str] = None
     tags: List[str] = []
     created_at: datetime
 
@@ -296,8 +296,8 @@ class LeadList(BaseModel):
                 "title": "Director of Toxicology",
                 "company": "Moderna Therapeutics",
                 "email": "sarah.mitchell@modernatx.com",
-                "propensity_score": 95,
-                "priority_tier": "HIGH",
+                "relevance_score": 95,
+                "relevance_tier": "HIGH",
                 "tags": ["high-priority"],
                 "created_at": "2024-12-01T00:00:00Z",
             }
@@ -310,7 +310,7 @@ class LeadList(BaseModel):
 # ============================================================================
 
 
-class LeadFilters(BaseModel):
+class ResearcherFilters(BaseModel):
     """
     Lead filtering parameters
     """
@@ -322,7 +322,7 @@ class LeadFilters(BaseModel):
     max_score: Optional[int] = Field(
         None, ge=0, le=100, description="Maximum propensity score"
     )
-    priority_tier: Optional[str] = Field(None, pattern="^(HIGH|MEDIUM|LOW)$")
+    relevance_tier: Optional[str] = Field(None, pattern="^(HIGH|MEDIUM|LOW)$")
     status: Optional[str] = None
 
     location: Optional[str] = None
@@ -345,7 +345,7 @@ class LeadFilters(BaseModel):
             "example": {
                 "search": "director toxicology",
                 "min_score": 70,
-                "priority_tier": "HIGH",
+                "relevance_tier": "HIGH",
                 "location": "Cambridge",
                 "has_email": True,
                 "tags": ["high-priority", "conference-speaker"],
@@ -354,19 +354,19 @@ class LeadFilters(BaseModel):
     }
 
 
-class LeadQuery(PaginationParams, SortParams):
+class ResearcherQuery(PaginationParams, SortParams):
     """
     Combined lead query parameters
     """
 
-    filters: LeadFilters = Field(default_factory=LeadFilters)
+    filters: ResearcherFilters = Field(default_factory=ResearcherFilters)
 
     model_config = {
         "json_schema_extra": {
             "example": {
                 "page": 1,
                 "size": 50,
-                "sort_by": "propensity_score",
+                "sort_by": "relevance_score",
                 "sort_order": "desc",
                 "filters": {"min_score": 70, "location": "Cambridge"},
             }
@@ -379,12 +379,12 @@ class LeadQuery(PaginationParams, SortParams):
 # ============================================================================
 
 
-class LeadBulkCreate(BaseModel):
+class ResearcherBulkCreate(BaseModel):
     """
     Bulk create leads
     """
 
-    leads: List[LeadCreate] = Field(..., min_length=1, max_length=100)
+    leads: List[ResearcherCreate] = Field(..., min_length=1, max_length=100)
     skip_duplicates: bool = Field(default=True, description="Skip duplicate emails")
     calculate_scores: bool = Field(
         default=True, description="Calculate propensity scores"
@@ -408,28 +408,28 @@ class LeadBulkCreate(BaseModel):
     }
 
 
-class LeadScoreUpdate(BaseModel):
+class ResearcherScoreUpdate(BaseModel):
     """
     Update lead score
     """
 
-    propensity_score: int = Field(..., ge=0, le=100, description="New propensity score")
+    relevance_score: int = Field(..., ge=0, le=100, description="New propensity score")
     recalculate: bool = Field(default=False, description="Recalculate using algorithm")
 
     model_config = {
-        "json_schema_extra": {"example": {"propensity_score": 95, "recalculate": False}}
+        "json_schema_extra": {"example": {"relevance_score": 95, "recalculate": False}}
     }
 
 
 # Export all
 __all__ = [
-    "LeadCreate",
-    "LeadUpdate",
-    "LeadBase",
-    "LeadDetail",
-    "LeadList",
-    "LeadFilters",
-    "LeadQuery",
-    "LeadBulkCreate",
-    "LeadScoreUpdate",
+    "ResearcherCreate",
+    "ResearcherUpdate",
+    "ResearcherBase",
+    "ResearcherDetail",
+    "ResearcherList",
+    "ResearcherFilters",
+    "ResearcherQuery",
+    "ResearcherBulkCreate",
+    "ResearcherScoreUpdate",
 ]
