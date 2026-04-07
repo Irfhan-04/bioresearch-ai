@@ -13,6 +13,8 @@ from app.models.researcher import Researcher
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_WEIGHTS: Dict[str, float] = {}
+
 
 class ScoringService:
     """Minimal scoring service retained only to keep imports stable."""
@@ -90,3 +92,6 @@ def get_scoring_service() -> ScoringService:
     if _scoring_service is None:
         _scoring_service = ScoringService()
     return _scoring_service
+
+
+__all__ = ["ScoringService", "DEFAULT_WEIGHTS", "get_scoring_service"]

@@ -38,7 +38,11 @@ except Exception as e:
 from app.core.config import get_database_url, settings
 from app.core.database import SYNC_CONNECT_ARGS, Base
 # Import all models so Alembic can detect them
-from app.models import Export, Lead, Pipeline, Search, User
+from app.models.export import Export
+from app.models.researcher import Researcher
+from app.models.pipeline import Pipeline
+from app.models.search import Search
+from app.models.user import User
 
 # Alembic Config object
 config = context.config

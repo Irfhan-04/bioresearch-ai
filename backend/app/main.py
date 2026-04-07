@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """Application lifespan events — startup and shutdown."""
     logger.info("Starting BioResearch AI...")
-    logger.info(f"Environment: {settings.SENTRY_ENVIRONMENT}")
+    logger.info(f"Environment: {getattr(settings, 'SENTRY_ENVIRONMENT', 'local')}")
     logger.info(f"Debug mode: {settings.DEBUG}")
 
     try:
