@@ -35,6 +35,7 @@ asttokens==3.0.1
 async-timeout==5.0.1 ; python_full_version < '3.12'
     # via
     #   asyncpg
+    #   bioresearch-ai-backend
     #   redis
 asyncpg==0.29.0
     # via bioresearch-ai-backend
@@ -282,7 +283,9 @@ jinja2==3.1.6
     #   mkdocs
     #   mkdocs-material
 joblib==1.5.3
-    # via scikit-learn
+    # via
+    #   bioresearch-ai-backend
+    #   scikit-learn
 kombu==5.6.2
     # via
     #   bioresearch-ai-backend
@@ -517,7 +520,9 @@ pytz==2023.3
     #   croniter
     #   pandas
 pywin32==311 ; sys_platform == 'win32'
-    # via locust
+    # via
+    #   bioresearch-ai-backend
+    #   locust
 pyyaml==6.0.3
     # via
     #   bioresearch-ai-backend
@@ -563,7 +568,9 @@ rsa==4.9.1
 scikit-learn==1.4.0
     # via bioresearch-ai-backend
 scipy==1.16.3
-    # via scikit-learn
+    # via
+    #   bioresearch-ai-backend
+    #   scikit-learn
 sentry-sdk==1.39.2
     # via bioresearch-ai-backend
 setuptools==80.9.0
@@ -616,9 +623,13 @@ tenacity==8.2.3
     #   bioresearch-ai-backend
     #   plotly
 threadpoolctl==3.6.0
-    # via scikit-learn
+    # via
+    #   bioresearch-ai-backend
+    #   scikit-learn
 tomli==2.4.1 ; python_full_version <= '3.11'
-    # via coverage
+    # via
+    #   bioresearch-ai-backend
+    #   coverage
 tomlkit==0.13.3
     # via
     #   bioresearch-ai-backend
