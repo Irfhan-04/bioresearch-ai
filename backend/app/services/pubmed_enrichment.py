@@ -25,7 +25,7 @@ from typing import Any, Dict, Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.lead import Lead
+from app.models.researcher import Researcher as Lead
 from app.services.pubmed_service import PubMedService, get_pubmed_service
 
 logger = logging.getLogger(__name__)

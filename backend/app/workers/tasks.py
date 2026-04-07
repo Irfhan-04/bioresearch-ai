@@ -133,7 +133,7 @@ def enrich_lead_task(self, lead_id: str, user_id: str, services: List[str] = Non
 
         async def _enrich():
             async with async_session_factory() as db:
-                from app.models.lead import Lead
+                from app.models.researcher import Researcher as Lead
 
                 # Get lead
                 result = await db.execute(select(Lead).where(Lead.id == UUID(lead_id)))
@@ -280,7 +280,7 @@ def send_daily_digests():
     async def _send():
         from datetime import date, timedelta
         from sqlalchemy import func as sa_func
-        from app.models.lead import Lead
+        from app.models.researcher import Researcher as Lead
         from app.models.usage import UsageEvent, UsageEventType
 
         async with async_session_factory() as db:
@@ -428,7 +428,7 @@ def recalculate_all_scores():
     """
 
     async def _recalculate():
-        from app.models.lead import Lead
+        from app.models.researcher import Researcher as Lead
         from app.services.scoring_service import ScoringService
 
         async with async_session_factory() as db:

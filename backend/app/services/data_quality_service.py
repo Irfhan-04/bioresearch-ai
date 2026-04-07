@@ -7,7 +7,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
 
-from app.models.lead import Lead
+from app.models.researcher import Researcher as Lead
 
 logger = logging.getLogger(__name__)
 

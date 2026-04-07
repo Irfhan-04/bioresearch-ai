@@ -11,7 +11,7 @@ from typing import Dict, List, Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.lead import Lead
+from app.models.researcher import Researcher as Lead
 from app.models.search import Search
 from app.models.user import User
 from app.services.data_source_manager import (DataSourceType,

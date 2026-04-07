@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from app.core.cache import Cache
 from app.core.config import settings
-from app.models.lead import Lead
+from app.models.researcher import Researcher as Lead
 
 if TYPE_CHECKING:
     from app.services.quota_manager import QuotaManager

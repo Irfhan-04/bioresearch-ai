@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.models.export import Export, ExportFormat, ExportStatus
-from app.models.lead import Lead
+from app.models.researcher import Researcher as Lead
 from app.models.user import User
 from app.utils.storage import get_storage_service
 
