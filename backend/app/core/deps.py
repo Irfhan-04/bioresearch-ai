@@ -3,7 +3,7 @@ FastAPI Dependencies
 Authentication, authorization, and database session management
 """
 
-from typing import AsyncGenerator, Generator, Optional
+from typing import AsyncGenerator, Optional
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, Security, status
@@ -262,182 +262,14 @@ async def get_current_superuser(
     return current_user
 
 
-# ============================================================================
-# SUBSCRIPTION TIER DEPENDENCIES
-# ============================================================================
 
 
-def require_subscription_tier(required_tier: SubscriptionTier):
-    """
-    Dependency factory to require specific subscription tier
 
-    Usage:
-        require_pro = require_subscription_tier(SubscriptionTier.PRO)
-
-        @app.post("/advanced-feature")
-        async def advanced_feature(
-            user: User = Depends(require_pro)
-        ):
-            return {"message": "Pro users only"}
-    """
-
-    async def check_tier(
-        current_user: User = Depends(get_current_active_user),
-    ) -> User:
-        tier_hierarchy = {
-            SubscriptionTier.FREE: 0,
-            SubscriptionTier.PRO: 1,
-            SubscriptionTier.TEAM: 2,
-            SubscriptionTier.ENTERPRISE: 3,
-        }
-
-        user_tier_level = tier_hierarchy.get(current_user.subscription_tier, 0)
-        required_tier_level = tier_hierarchy.get(required_tier, 0)
-
-        if user_tier_level < required_tier_level:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"This feature requires {required_tier.value} subscription or higher",
-            )
-
-        return current_user
-
-    return check_tier
-
-
-# Create common tier requirements
-require_pro = require_subscription_tier(SubscriptionTier.PRO)
-require_team = require_subscription_tier(SubscriptionTier.TEAM)
-require_enterprise = require_subscription_tier(SubscriptionTier.ENTERPRISE)
-
-
-# ============================================================================
-# RATE LIMITING DEPENDENCIES
-# ============================================================================
-
-from app.core.cache import RateLimiter
-
-
-async def check_rate_limit(
-    endpoint: str = "default", max_requests: int = 60, window: int = 60
-):
-    """
-    Dependency factory for rate limiting
-
-    Usage:
-        rate_limit = check_rate_limit(endpoint="search", max_requests=10)
-
-        @app.post("/search")
-        async def search(
-            query: str,
-            user: User = Depends(get_current_user),
-            _: None = Depends(rate_limit)
-        ):
-            # Limited to 10 requests per minute
-    """
-
-    async def _check(
-        current_user: User = Depends(get_current_user),
-    ):
-        allowed, remaining = await RateLimiter.check_rate_limit(
-            user_id=str(current_user.id),
-            endpoint=endpoint,
-            max_requests=max_requests,
-            window=window,
-        )
-
-        if not allowed:
-            raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail=f"Rate limit exceeded. Try again in {window} seconds.",
-                headers={"Retry-After": str(window)},
-            )
-
-    return _check
-
-
-# ============================================================================
-# USAGE QUOTA DEPENDENCIES
-# ============================================================================
-
-
-async def check_lead_quota(
-    current_user: User = Depends(get_current_active_user),
-):
-    """
-    Check if user has reached their monthly lead limit
-
-    Usage:
-        @app.post("/leads")
-        async def create_lead(
-            lead_data: LeadCreate,
-            user: User = Depends(get_current_user),
-            _: None = Depends(check_lead_quota)
-        ):
-            # Can only create if under quota
-    """
-    if current_user.has_reached_lead_limit():
-        limit = current_user.get_monthly_lead_limit()
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Monthly lead limit reached ({limit}). Upgrade your plan for more leads.",
-            headers={"X-Quota-Limit": str(limit)},
-        )
-
-
-# ============================================================================
-# OPTIONAL AUTHENTICATION
-# ============================================================================
-
-
-async def get_current_user_optional(
-    credentials: Optional[HTTPAuthorizationCredentials] = Security(bearer_scheme),
-    api_key: Optional[str] = Security(api_key_header),
-    db: AsyncSession = Depends(get_db),
-) -> Optional[User]:
-    """
-    Get current user if authenticated, otherwise None
-    Useful for endpoints that work for both authenticated and anonymous users
-
-    Usage:
-        @app.get("/items")
-        async def get_items(
-            user: Optional[User] = Depends(get_current_user_optional)
-        ):
-            if user:
-                # Show personalized results
-            else:
-                # Show public results
-    """
-    if credentials:
-        try:
-            return await get_current_user_from_token(credentials, db)
-        except HTTPException:
-            pass
-
-    if api_key:
-        try:
-            return await get_current_user_from_api_key(api_key, db)
-        except HTTPException:
-            pass
-
+async def check_researcher_quota(current_user: User = Depends(get_current_active_user)) -> None:
+    """Compatibility quota dependency (currently no-op)."""
+    _ = current_user
     return None
 
-
-# Export all
-__all__ = [
-    "get_db",
-    "get_current_user",
-    "get_current_user_from_token",
-    "get_current_user_from_api_key",
-    "get_current_active_user",
-    "get_current_verified_user",
-    "get_current_superuser",
-    "get_current_user_optional",
-    "require_subscription_tier",
-    "require_pro",
-    "require_team",
-    "require_enterprise",
-    "check_rate_limit",
-    "check_lead_quota",
-]
+async def get_redis():
+    """Return redis cache backend."""
+    return Cache

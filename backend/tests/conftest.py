@@ -23,8 +23,6 @@ from app.core.database import Base, get_async_db
 from app.core.security import create_access_token, get_password_hash
 from app.main import app
 from app.models.export import Export, ExportFormat, ExportStatus
-from app.models.lead import Lead
-from app.models.pipeline import Pipeline, PipelineSchedule, PipelineStatus
 from app.models.search import Search
 from app.models.user import SubscriptionTier, User
 
@@ -167,63 +165,6 @@ def auth_headers(test_token: str) -> dict:
 
 
 # ============================================================================
-# LEAD FIXTURES
-# ============================================================================
-
-
-@pytest.fixture
-async def test_lead(db_session: AsyncSession, test_user: User) -> Lead:
-    """Create test lead"""
-    lead = Lead(
-        user_id=test_user.id,
-        name="Dr. John Smith",
-        title="Principal Scientist",
-        company="BioTech Inc",
-        location="Cambridge, MA",
-        email="john.smith@biotech.com",
-        propensity_score=85,
-        priority_tier="HIGH",
-        recent_publication=True,
-        publication_year=2024,
-        publication_title="Novel DILI Models",
-        status="NEW",
-    )
-
-    db_session.add(lead)
-    await db_session.commit()
-    await db_session.refresh(lead)
-
-    return lead
-
-
-@pytest.fixture
-async def test_leads(db_session: AsyncSession, test_user: User) -> list[Lead]:
-    """Create multiple test leads"""
-    leads = []
-
-    for i in range(10):
-        lead = Lead(
-            user_id=test_user.id,
-            name=f"Dr. Test {i}",
-            title="Researcher",
-            company=f"Company {i}",
-            location="Boston, MA",
-            propensity_score=70 + i,
-            priority_tier="MEDIUM" if i < 5 else "HIGH",
-            status="NEW",
-        )
-        leads.append(lead)
-        db_session.add(lead)
-
-    await db_session.commit()
-
-    for lead in leads:
-        await db_session.refresh(lead)
-
-    return leads
-
-
-# ============================================================================
 # SEARCH FIXTURES
 # ============================================================================
 
@@ -268,30 +209,6 @@ async def test_export(db_session: AsyncSession, test_user: User) -> Export:
     await db_session.refresh(export)
 
     return export
-
-
-# ============================================================================
-# PIPELINE FIXTURES
-# ============================================================================
-
-
-@pytest.fixture
-async def test_pipeline(db_session: AsyncSession, test_user: User) -> Pipeline:
-    """Create test pipeline"""
-    pipeline = Pipeline(
-        user_id=test_user.id,
-        name="Test Pipeline",
-        description="Test pipeline for unit tests",
-        schedule=PipelineSchedule.MANUAL,
-        config={"search_queries": [{"source": "pubmed", "query": "test query"}]},
-        status=PipelineStatus.ACTIVE,
-    )
-
-    db_session.add(pipeline)
-    await db_session.commit()
-    await db_session.refresh(pipeline)
-
-    return pipeline
 
 
 # ============================================================================

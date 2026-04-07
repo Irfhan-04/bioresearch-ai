@@ -13,7 +13,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from app.core.cache import Cache
-from app.models.lead import Lead
+from app.models.researcher import Researcher as Lead
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../.."))
 

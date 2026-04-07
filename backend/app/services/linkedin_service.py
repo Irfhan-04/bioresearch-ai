@@ -22,7 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.cache import Cache
 from app.core.cache import Cache, CacheKey
 from app.core.config import settings
-from app.models.lead import Lead
+from app.models.researcher import Researcher as Lead
 
 logger = logging.getLogger(__name__)
 

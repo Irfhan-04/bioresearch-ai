@@ -32,7 +32,7 @@ from typing import Any, Dict, List, Optional
 
 from app.core.cache import Cache
 from app.core.config import settings
-from app.models.lead import Lead
+from app.models.researcher import Researcher as Lead
 
 # ── Phase 1 scraper import (unchanged) ──────────────────────────────────────
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../.."))

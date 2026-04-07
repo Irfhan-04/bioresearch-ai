@@ -9,7 +9,7 @@ import logging
 from enum import Enum
 from typing import Dict, List, Optional, Set
 
-from app.models.lead import Lead
+from app.models.researcher import Researcher as Lead
 from app.services.conference_service import get_conference_service
 from app.services.funding_service import get_funding_service
 from app.services.linkedin_service import get_linkedin_service

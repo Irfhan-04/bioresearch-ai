@@ -5,19 +5,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Search } from 'lucide-react'
-import { useLeads } from '@/hooks/use-leads'
+import { useResearchers } from '@/hooks/use-researchers'
 import { Badge } from '@/components/ui/badge'
+import { Researcher } from '@/types/researcher'
 
 export default function SearchPage() {
   const [query, setQuery] = useState('')
   const [submitted, setSubmitted] = useState('')
-  const { leads, isLoading } = useLeads(submitted ? { search: submitted } : undefined)
+  const { researchers, isLoading } = useResearchers(submitted ? { search: submitted } : undefined)
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Search</h1>
-        <p className="text-muted-foreground">Search across all your leads</p>
+        <p className="text-muted-foreground">Search across all your researchers</p>
       </div>
 
       <div className="flex gap-2">
@@ -39,25 +40,25 @@ export default function SearchPage() {
           <CardHeader>
             <CardTitle>
               Results for &quot;{submitted}&quot;
-              {!isLoading && <span className="ml-2 text-sm font-normal text-muted-foreground">({leads.length} found)</span>}
+              {!isLoading && <span className="ml-2 text-sm font-normal text-muted-foreground">({researchers.length} found)</span>}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <p className="text-muted-foreground text-sm">Searching...</p>
-            ) : leads.length === 0 ? (
+            ) : researchers.length === 0 ? (
               <p className="text-muted-foreground text-sm">No results found.</p>
             ) : (
               <div className="space-y-3">
-                {leads.map((lead) => (
-                  <div key={lead.id} className="flex items-center justify-between rounded-lg border p-3">
+                {researchers.map((researcher: Researcher) => (
+                  <div key={researcher.id} className="flex items-center justify-between rounded-lg border p-3">
                     <div>
-                      <p className="font-medium">{lead.name}</p>
-                      <p className="text-sm text-muted-foreground">{lead.title} {lead.company && `· ${lead.company}`}</p>
+                      <p className="font-medium">{researcher.name}</p>
+                      <p className="text-sm text-muted-foreground">{researcher.title} {researcher.company && `· ${researcher.company}`}</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      {lead.propensity_score && <Badge>{lead.propensity_score}</Badge>}
-                      <Badge variant="outline">{lead.status}</Badge>
+                      {researcher.relevance_score && <Badge>{researcher.relevance_score}</Badge>}
+                      <Badge variant="outline">{researcher.status}</Badge>
                     </div>
                   </div>
                 ))}

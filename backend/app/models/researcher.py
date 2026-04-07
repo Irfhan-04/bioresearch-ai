@@ -4,8 +4,8 @@ Researcher Model - The core entity representing potential customers
 
 import uuid
 
-from sqlalchemy import (Boolean, Column, DateTime, ForeignKey, Integer, String,
-                        Text)
+from sqlalchemy import (Boolean, Column, DateTime, Float, ForeignKey, Integer,
+                        String, Text)
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -102,6 +102,20 @@ class Researcher(Base):
     relevance_score = Column(Integer, nullable=True, index=True)
     rank = Column(Integer, nullable=True, index=True)
     relevance_tier = Column(String(20), nullable=True)  # HIGH, MEDIUM, LOW
+
+
+
+    # AI / ML Intelligence fields
+    abstract_text = Column(Text, nullable=True, comment="Raw PubMed abstract for embedding")
+    abstract_embedding_id = Column(String(255), nullable=True, comment="ChromaDB document ID")
+    abstract_relevance_score = Column(Float, nullable=True, comment="Cosine sim vs default biotech query")
+    research_area = Column(String(100), nullable=True, comment="Classifier output")
+    domain_coverage_score = Column(Float, nullable=True, comment="Domain keyword coverage — ML feature 11")
+    relevance_confidence = Column(Float, nullable=True, comment="Model probability for predicted tier")
+    shap_contributions = Column(JSONB, nullable=True, comment="Top 5 SHAP explanations")
+    intelligence = Column(JSONB, nullable=True, comment="LLM research intelligence output")
+    intelligence_generated_at = Column(DateTime(timezone=True), nullable=True)
+    contact_confidence = Column(Float, nullable=True, comment="Contact discovery confidence")
 
     # Publication Information
     recent_publication = Column(Boolean, default=False)

@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_active_user, get_db
 from app.models.activity import ActivityType, LeadActivity
-from app.models.lead import Lead
+from app.models.researcher import Researcher as Lead
 from app.models.team import TeamMembership
 from app.models.user import User
 from app.schemas.activity import (

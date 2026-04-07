@@ -16,7 +16,7 @@ class TestExportAPI:
     """Test export endpoints"""
 
     async def test_create_export_csv(
-        self, client: AsyncClient, auth_headers: dict, test_leads: list
+        self, client: AsyncClient, auth_headers: dict
     ):
         """Test creating CSV export"""
         response = await client.post(

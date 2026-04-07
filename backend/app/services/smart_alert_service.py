@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.alert import AlertChannel, AlertRule, AlertTrigger
-from app.models.lead import Lead
+from app.models.researcher import Researcher as Lead
 from app.models.user import User
 from app.services.email_service import get_email_service
 from app.services.webhook_service import get_webhook_service

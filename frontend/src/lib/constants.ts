@@ -8,7 +8,7 @@ export const ROUTES = {
   LOGIN: '/login',
   REGISTER: '/register',
   DASHBOARD: '/dashboard',
-  LEADS: '/dashboard/leads',
+  LEADS: '/dashboard/researchers',
   SEARCH: '/dashboard/search',
   PIPELINES: '/dashboard/pipelines',
   ANALYTICS: '/dashboard/analytics',

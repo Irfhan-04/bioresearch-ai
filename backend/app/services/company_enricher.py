@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from app.core.cache import Cache
 from app.core.config import settings
-from app.models.lead import Lead
+from app.models.researcher import Researcher as Lead
 
 if TYPE_CHECKING:
     from app.services.quota_manager import QuotaManager
@@ -96,7 +96,7 @@ class CompanyEnricher:
         }
 
     async def _should_call_clearbit(self, lead: Lead, quota_manager: "QuotaManager") -> bool:
-        from app.services.email_finder import _get_institution_type
+        from app.services.contact_service import _get_institution_type
 
         if _get_institution_type(lead) == "academic":
             return False

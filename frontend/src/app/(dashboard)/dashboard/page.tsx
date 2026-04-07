@@ -5,21 +5,21 @@ import { Users, TrendingUp, Activity, Target } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api/client'
 import { ScoreDistributionChart } from '@/components/charts/score-distribution-chart'
-import { LeadsTimelineChart } from '@/components/charts/leads-timeline-chart'
+import { ResearchersTimelineChart } from '@/components/charts/researchers-timeline-chart'
 import { useAuth } from '@/hooks/use-auth'
 import { cn } from '@/lib/utils'
 
 interface DashboardStats {
-  total_leads: number
-  high_priority_leads: number
-  leads_this_month: number
+  total_researchers: number
+  high_relevance_researchers: number
+  researchers_this_month: number
   average_score: number
 }
 
 const METRICS = [
   {
-    key: 'total_leads' as const,
-    label: 'Total Leads',
+    key: 'total_researchers' as const,
+    label: 'Total Researchers',
     sub: 'All time',
     icon: Users,
     accent: '#00d68f',
@@ -27,8 +27,8 @@ const METRICS = [
     border: 'border-[rgba(0,214,143,0.15)]',
   },
   {
-    key: 'high_priority_leads' as const,
-    label: 'High Priority',
+    key: 'high_relevance_researchers' as const,
+    label: 'High Relevance',
     sub: 'Score ≥ 70',
     icon: Target,
     accent: '#a78bfa',
@@ -36,9 +36,9 @@ const METRICS = [
     border: 'border-violet-500/15',
   },
   {
-    key: 'leads_this_month' as const,
+    key: 'researchers_this_month' as const,
     label: 'This Month',
-    sub: 'New leads',
+    sub: 'New researchers',
     icon: TrendingUp,
     accent: '#38bdf8',
     glow: 'rgba(56,189,248,0.07)',
@@ -80,7 +80,7 @@ export default function DashboardPage() {
           <span className="text-[#00d68f]">{user?.full_name?.split(' ')[0] ?? 'researcher'}</span>
         </p>
         <h1 className="font-syne text-3xl font-700 text-white tracking-tight">Intelligence Overview</h1>
-        <p className="text-sm text-zinc-500 mt-1">Your biotech prospecting dashboard — live data, precision scoring.</p>
+        <p className="text-sm text-zinc-500 mt-1">Your BioResearch AI dashboard — live data, relevance scoring.</p>
       </div>
 
       {/* Metric cards */}
@@ -116,7 +116,7 @@ export default function DashboardPage() {
       <div className="grid gap-6 lg:grid-cols-2 animate-fade-up delay-400">
         {[
           { label: 'Score Distribution', dot: '#00d68f', Chart: ScoreDistributionChart },
-          { label: 'Leads Timeline',     dot: '#a78bfa', Chart: LeadsTimelineChart },
+          { label: 'Researchers Timeline',     dot: '#a78bfa', Chart: ResearchersTimelineChart },
         ].map(({ label, dot, Chart }) => (
           <div
             key={label}

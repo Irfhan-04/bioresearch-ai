@@ -12,7 +12,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.lead import Lead
+from app.models.researcher import Researcher as Lead
 from app.models.pipeline import Pipeline, PipelineSchedule, PipelineStatus
 from app.models.user import User
 from app.services.data_quality_service import get_data_quality_service

@@ -49,17 +49,15 @@ async def create_export(
 
     **Supported formats:**
     - `csv`: Comma-separated values
-    - `excel`: Excel workbook with formatting
-    - `json`: JSON array of objects
-    - `pdf`: PDF report (coming soon)
-
+        - `json`: JSON array of objects
+    
     **Filters:**
     - `min_score`: Minimum propensity score
     - `max_score`: Maximum propensity score
     - `priority_tier`: HIGH, MEDIUM, LOW
-    - `status`: Lead status
+    - `status`: Researcher status
     - `location`: Location filter
-    - `has_email`: Only leads with email
+    - `has_email`: Only researchers with contact info
 
     **Process:**
     1. Export created in PENDING status
