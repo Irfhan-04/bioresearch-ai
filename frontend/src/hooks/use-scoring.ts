@@ -22,9 +22,9 @@ export function useScoring() {
   const rescoreAllMutation = useMutation({
     mutationFn: scoringService.rescoreAll,
     onSuccess: (r) => {
-      qc.invalidateQueries({ queryKey: ['leads'] })
+      qc.invalidateQueries({ queryKey: ['researchers'] })
       qc.invalidateQueries({ queryKey: ['scoring-stats'] })
-      toast({ title: `Rescored ${r.leads_rescored} leads`, description: `Avg score: ${r.average_score}` })
+      toast({ title: `Rescored ${r.researchers_rescored} researchers`, description: `Avg score: ${r.average_relevance_score}` })
     },
     onError: () => toast({ title: 'Error', description: 'Rescore failed', variant: 'destructive' }),
   })

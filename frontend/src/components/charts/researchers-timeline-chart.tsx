@@ -3,15 +3,15 @@
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
 const defaultData = [
-  { date: 'Jan', created: 65, qualified: 28 },
-  { date: 'Feb', created: 78, qualified: 35 },
-  { date: 'Mar', created: 89, qualified: 42 },
-  { date: 'Apr', created: 95, qualified: 51 },
-  { date: 'May', created: 112, qualified: 67 },
-  { date: 'Jun', created: 134, qualified: 78 },
+  { date: 'Jan', created: 65, indexed: 28 },
+  { date: 'Feb', created: 78, indexed: 35 },
+  { date: 'Mar', created: 89, indexed: 42 },
+  { date: 'Apr', created: 95, indexed: 51 },
+  { date: 'May', created: 112, indexed: 67 },
+  { date: 'Jun', created: 134, indexed: 78 },
 ]
 
-export function LeadsTimelineChart({ data }: { data?: typeof defaultData }) {
+export function ResearchersTimelineChart({ data }: { data?: typeof defaultData }) {
   return (
     <ResponsiveContainer width="100%" height={300}>
       <LineChart data={data || defaultData}>
@@ -34,16 +34,16 @@ export function LeadsTimelineChart({ data }: { data?: typeof defaultData }) {
           strokeWidth={2.5}
           dot={{ r: 0 }}
           activeDot={{ r: 5, fill: '#00d68f' }}
-          name="Created"
+          name="Researchers Indexed"
         />
         <Line
           type="monotone"
-          dataKey="qualified"
+          dataKey="indexed"
           stroke="#a78bfa"
           strokeWidth={2.5}
           dot={{ r: 0 }}
           activeDot={{ r: 5, fill: '#a78bfa' }}
-          name="Qualified"
+          name="Researchers"
         />
       </LineChart>
     </ResponsiveContainer>

@@ -24,7 +24,7 @@ const FIELDS = [
   { id: 'company', label: 'Company' },
   { id: 'title', label: 'Title' },
   { id: 'location', label: 'Location' },
-  { id: 'propensity_score', label: 'Score' },
+  { id: 'relevance_score', label: 'Relevance Score' },
   { id: 'status', label: 'Status' },
   { id: 'phone', label: 'Phone' },
   { id: 'linkedin_url', label: 'LinkedIn' },
@@ -59,7 +59,7 @@ export function ExportDialog() {
       const link = document.createElement('a')
 
       link.href = url
-      link.download = `leads.${format}`
+      link.download = `researchers.${format}`
       document.body.appendChild(link)
       link.click()
       link.remove()
@@ -83,8 +83,8 @@ export function ExportDialog() {
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Export Leads</DialogTitle>
-          <DialogDescription>Choose format and fields to export</DialogDescription>
+          <DialogTitle>Export Researchers</DialogTitle>
+          <DialogDescription>Choose format and fields to export researcher data</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">

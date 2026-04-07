@@ -14,11 +14,14 @@ export const API_ENDPOINTS = {
   API_KEYS: '/users/me/api-keys',
   PREFERENCES: '/users/me/preferences',
 
-  // Leads
-  LEADS: '/leads',
-  LEAD_DETAIL: (id: string) => `/leads/${id}`,
-  LEAD_BULK_DELETE: '/leads/bulk/delete',
-  LEAD_BULK_CREATE: '/leads/bulk/create',
+  // Researchers
+  RESEARCHERS: '/researchers',
+  RESEARCHER_DETAIL: (id: string) => `/researchers/${id}`,
+  RESEARCHER_BULK_DELETE: '/researchers/bulk/delete',
+  RESEARCHER_BULK_CREATE: '/researchers/bulk/create',
+
+  LEADS: '/researchers',
+  LEAD_DETAIL: (id: string) => `/researchers/${id}`,
 
   // Search
   SEARCH: '/search',

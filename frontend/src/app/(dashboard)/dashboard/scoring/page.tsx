@@ -45,19 +45,19 @@ export default function ScoringPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Lead Scoring</h1>
+          <h1 className="text-3xl font-bold">Researcher Scoring</h1>
           <p className="text-muted-foreground">Weighted feature scoring engine (v1)</p>
         </div>
         <Button onClick={rescoreAll} disabled={isRescoring}>
           <RefreshCw className={`mr-2 h-4 w-4 ${isRescoring ? 'animate-spin' : ''}`} />
-          {isRescoring ? 'Rescoring…' : 'Rescore All Leads'}
+          {isRescoring ? 'Rescoring…' : 'Rescore All Researchers'}
         </Button>
       </div>
 
       {stats && (
         <div className="grid gap-4 md:grid-cols-4">
           {[
-            { label: 'Total Leads', value: stats.total_leads },
+            { label: 'Total Researchers', value: stats.total_researchers ?? stats.total_leads },
             { label: 'Avg Score', value: stats.average_score?.toFixed(1) },
             { label: 'Highest', value: stats.max_score },
             { label: 'Lowest', value: stats.min_score },

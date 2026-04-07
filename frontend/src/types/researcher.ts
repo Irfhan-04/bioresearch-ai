@@ -1,4 +1,4 @@
-export interface Lead {
+export interface Researcher {
   id: string
   user_id: string
   name: string
@@ -8,9 +8,9 @@ export interface Lead {
   email: string | null
   phone: string | null
   linkedin_url: string | null
-  propensity_score: number | null
+  relevance_score: number | null
   rank: number | null
-  priority_tier: 'HIGH' | 'MEDIUM' | 'LOW' | 'UNSCORED'
+  relevance_tier: 'HIGH' | 'MEDIUM' | 'LOW' | 'UNSCORED'
   recent_publication: boolean
   publication_year: number | null
   publication_title: string | null
@@ -20,13 +20,16 @@ export interface Lead {
   uses_3d_models: boolean
   data_sources: string[]
   tags: string[]
+  research_signals?: string[]
+  is_senior_researcher?: boolean
+  contact_confidence?: number
   notes: string | null
   status: 'NEW' | 'CONTACTED' | 'QUALIFIED' | 'PROPOSAL' | 'NEGOTIATION' | 'WON' | 'LOST'
   created_at: string
   updated_at: string
 }
 
-export interface LeadFilters {
+export interface ResearcherFilters {
   search?: string
   status?: string
   min_score?: number
@@ -38,7 +41,7 @@ export interface LeadFilters {
   size?: number
 }
 
-export interface CreateLeadRequest {
+export interface CreateResearcherRequest {
   name: string
   title?: string
   company?: string

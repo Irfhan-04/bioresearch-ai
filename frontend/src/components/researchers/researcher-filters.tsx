@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Search, X } from 'lucide-react'
 import { useState } from 'react'
 
-export function LeadFilters({ onFiltersChange }: { onFiltersChange: (f: any) => void }) {
+export function ResearcherFilters({ onFiltersChange }: { onFiltersChange: (f: any) => void }) {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('all')
   const [minScore, setMinScore] = useState('')
@@ -53,7 +53,7 @@ export function LeadFilters({ onFiltersChange }: { onFiltersChange: (f: any) => 
 
         <Input
           type="number"
-          placeholder="Min score"
+          placeholder="Min relevance"
           value={minScore}
           onChange={(e) => setMinScore(e.target.value)}
           className="w-[120px]"
