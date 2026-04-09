@@ -22,6 +22,7 @@ export const API_ENDPOINTS = {
 
   // Search
   SEARCH: '/search',
+  SEARCH_SEMANTIC: '/search/semantic',
   SEARCH_HISTORY: '/search/history',
   SEARCH_STATUS: '/search/status/quality',
 
@@ -38,6 +39,7 @@ export const API_ENDPOINTS = {
   SCORE_ALL: '/scoring/researchers/all/recalculate',
   SCORE_CONFIG: '/scoring/config',
   SCORE_STATS: '/scoring/stats',
+  SCORING_METRICS: '/scoring/metrics',
 
   // Legacy dashboard stats
   STATS: '/dashboard/stats',

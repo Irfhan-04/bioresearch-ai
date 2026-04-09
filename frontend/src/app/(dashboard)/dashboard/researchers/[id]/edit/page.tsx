@@ -27,6 +27,7 @@ const schema = z.object({
   status: z.enum(['NEW', 'CONTACTED', 'QUALIFIED', 'PROPOSAL', 'NEGOTIATION', 'WON', 'LOST']),
 })
 type EditResearcherForm = z.infer<typeof schema>
+const EDITABLE_STATUS = ['NEW', 'CONTACTED', 'QUALIFIED', 'PROPOSAL', 'NEGOTIATION', 'WON', 'LOST'] as const
 
 export default function EditResearcherPage() {
   const params = useParams()
@@ -48,7 +49,10 @@ export default function EditResearcherPage() {
       setValue('location', researcher.location || '')
       setValue('phone', researcher.phone || '')
       setValue('notes', researcher.notes || '')
-      setValue('status', researcher.status)
+      const safeStatus = EDITABLE_STATUS.includes(researcher.status as EditResearcherForm['status'])
+        ? (researcher.status as EditResearcherForm['status'])
+        : 'NEW'
+      setValue('status', safeStatus)
     }
   }, [researcher, setValue])
 
@@ -77,7 +81,7 @@ export default function EditResearcherPage() {
             <div className="space-y-2"><Label>Full Name *</Label><Input {...register('name')} />{errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}</div>
             <div className="grid gap-4 md:grid-cols-2"><div className="space-y-2"><Label>Title</Label><Input {...register('title')} /></div><div className="space-y-2"><Label>Company</Label><Input {...register('company')} /></div></div>
             <div className="grid gap-4 md:grid-cols-2"><div className="space-y-2"><Label>Email</Label><Input type="email" {...register('email')} /></div><div className="space-y-2"><Label>Phone</Label><Input {...register('phone')} /></div></div>
-            <div className="grid gap-4 md:grid-cols-2"><div className="space-y-2"><Label>Location</Label><Input {...register('location')} /></div><div className="space-y-2"><Label>Status</Label><Select defaultValue={researcher.status} onValueChange={(v) => setValue('status', v as EditResearcherForm['status'])}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{['NEW', 'CONTACTED', 'QUALIFIED', 'PROPOSAL', 'NEGOTIATION', 'WON', 'LOST'].map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}</SelectContent></Select></div></div>
+            <div className="grid gap-4 md:grid-cols-2"><div className="space-y-2"><Label>Location</Label><Input {...register('location')} /></div><div className="space-y-2"><Label>Status</Label><Select defaultValue={EDITABLE_STATUS.includes(researcher.status as EditResearcherForm['status']) ? (researcher.status as EditResearcherForm['status']) : 'NEW'} onValueChange={(v) => setValue('status', v as EditResearcherForm['status'])}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{EDITABLE_STATUS.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}</SelectContent></Select></div></div>
             <div className="space-y-2"><Label>Notes</Label><Textarea rows={4} placeholder="Add any notes about this researcher..." {...register('notes')} /></div>
             <div className="flex gap-2 pt-2">
               <Button type="submit" disabled={isUpdating}>{isUpdating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving...</> : 'Save Changes'}</Button>
