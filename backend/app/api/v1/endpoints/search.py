@@ -74,6 +74,7 @@ async def execute_search(
 
         semantic_hits = await embedding_svc.semantic_search(
             query=query,
+            user_id=str(current_user.id),
             n_results=50,
             research_area_filter=research_area_filter,
         )
@@ -167,6 +168,7 @@ async def semantic_search(
     embedding_svc = get_embedding_service()
     semantic_hits = await embedding_svc.semantic_search(
         query=query,
+        user_id=str(current_user.id),
         n_results=n_results,
         research_area_filter=research_area,
     )

@@ -134,6 +134,7 @@ class EmbeddingService:
     async def index_researcher(
         self,
         researcher_id: str,
+        user_id: str,
         title: Optional[str],
         abstract: Optional[str],
         research_area: str,
@@ -147,6 +148,7 @@ class EmbeddingService:
 
         Args:
             researcher_id:  UUID string — used as ChromaDB doc ID
+            user_id:        Owner UUID string — used to isolate tenant queries
             title:          Publication or job title
             abstract:       Research abstract text
             research_area:  Output of research_area_classifier
@@ -176,6 +178,7 @@ class EmbeddingService:
                 metadatas=[
                     {
                         "researcher_id": doc_id,
+                        "user_id": str(user_id),
                         "research_area": research_area,
                         "name": name or "",
                     }
@@ -222,6 +225,7 @@ class EmbeddingService:
     async def semantic_search(
         self,
         query: str,
+        user_id: str,
         n_results: int = 20,
         research_area_filter: Optional[str] = None,
     ) -> List[Tuple[str, float]]:
@@ -231,6 +235,7 @@ class EmbeddingService:
 
         Args:
             query:                 Natural language search query
+            user_id:               Owner UUID string for tenant isolation
             n_results:             Number of results to return
             research_area_filter:  If set, filter to this research area only
 
@@ -246,9 +251,9 @@ class EmbeddingService:
                 logger.warning("ChromaDB collection is empty — no researchers indexed yet")
                 return [], []
 
-            where_filter = None
+            where_filter = {"user_id": {"$eq": str(user_id)}}
             if research_area_filter and research_area_filter != "all":
-                where_filter = {"research_area": {"$eq": research_area_filter}}
+                where_filter["research_area"] = {"$eq": research_area_filter}
 
             query_embedding = _embed_text(prefixed_query)
 

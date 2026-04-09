@@ -161,6 +161,7 @@ class EnrichmentService:
 
             doc_id = await embedding_svc.index_researcher(
                 researcher_id=str(researcher.id),
+                user_id=str(researcher.user_id),
                 title=title,
                 abstract=abstract,
                 research_area=research_area,
