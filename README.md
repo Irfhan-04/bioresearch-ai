@@ -120,7 +120,3 @@ npm run dev
 | Hosting | Render.com + Vercel |
 
 ---
-
-## Demo video
-
-TBD (to be added after live validation run-through).
