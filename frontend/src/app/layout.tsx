@@ -6,8 +6,8 @@ import { Toaster } from '@/components/ui/toaster'
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'),
   title: {
-    default: 'BioResearch AI — Biotech Research Intelligence',
-    template: '%s | BioResearch AI',
+    default: 'BioResearch AI',
+    template: '%s — BioResearch AI',
   },
   description:
     'AI-powered biotech research intelligence. Discover and rank researchers by relevance using XGBoost, sentence-transformers, and SHAP explanations.',

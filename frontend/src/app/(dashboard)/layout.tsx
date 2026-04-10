@@ -3,7 +3,7 @@ import { Suspense } from 'react'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 
 export const metadata: Metadata = {
-  title: 'Dashboard',
+  title: 'Overview',
   robots: { index: false, follow: false },
 }
 

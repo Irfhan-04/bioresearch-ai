@@ -18,7 +18,7 @@ from app.api.v1.api import api_router
 from app.core.cache import close_redis, get_async_redis
 from app.core.config import settings
 from app.core.database import check_db_connection, close_db, init_db
-from app.schemas.base import ErrorResponse, HealthCheckResponse
+from app.schemas.base import ErrorResponse
 
 # Configure logging
 logging.basicConfig(
@@ -211,40 +211,11 @@ async def root():
     }
 
 
-@app.get(
-    "/health",
-    response_model=HealthCheckResponse,
-    tags=["Root"],
-    summary="Health Check",
-)
+@app.get("/health")
 async def health_check():
-    from datetime import datetime
+    """Render.com health check — must return 200 to mark the service healthy."""
+    return {"status": "ok", "service": "bioresearch-ai-backend"}
 
-    try:
-        db_status = "connected" if await check_db_connection() else "disconnected"
-    except Exception:
-        db_status = "error"
-
-    try:
-        redis = await get_async_redis()
-        await redis.ping()
-        cache_status = "connected"
-    except Exception:
-        cache_status = "disconnected"
-
-    overall_status = (
-        "healthy"
-        if (db_status == "connected" and cache_status == "connected")
-        else "degraded"
-    )
-
-    return HealthCheckResponse(
-        status=overall_status,
-        version=settings.APP_VERSION,
-        database=db_status,
-        cache=cache_status,
-        timestamp=datetime.utcnow(),
-    )
 
 
 # ============================================================================
