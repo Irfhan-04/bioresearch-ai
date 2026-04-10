@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: bioresearch-ai-backend
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: PUBMED_EMAIL
+        sync: false
+      - key: DEBUG
+        value: "false"
+      - key: LOG_LEVEL
+        value: "INFO"
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "1440"
+      - key: CHROMADB_PATH
+        value: "/app/chromadb_store"

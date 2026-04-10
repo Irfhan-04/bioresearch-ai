@@ -1,25 +1,30 @@
+# BioResearch AI — Backend Dockerfile
+# Target: Render.com Web Service
+
 FROM python:3.11-slim
 
-# Install uv from the official image — this is the recommended production pattern
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc \
+    libpq-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy lock files first — Docker layer caching means dependency install
-# only re-runs when pyproject.toml or uv.lock changes, not on every code change
-COPY pyproject.toml uv.lock ./
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# --frozen: use uv.lock exactly, fail if it is out of sync with pyproject.toml
-# --no-dev: skip dev dependencies (pytest etc.) in production
-# --no-cache: do not use the uv cache in the Docker layer (saves image size)
-RUN uv sync --frozen --no-dev --no-cache
-
-# Now copy application code (separate layer so code changes don't rebuild deps)
 COPY . .
 
-# Generate training data and train the ML model at build time
-# This means the scorer is ready on first request without a cold-start delay
-RUN uv run python scripts/generate_training_data.py && \
-    uv run python ml/train_scorer.py
+RUN python scripts/generate_training_data.py && python ml/train_scorer.py
 
-CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+ENV CHROMADB_PATH=/app/chromadb_store
+RUN mkdir -p /app/chromadb_store
+
+EXPOSE 8000
+
+CMD ["gunicorn", "app.main:app", "--worker-class", "uvicorn.workers.UvicornWorker", "--workers", "1", "--bind", "0.0.0.0:8000", "--timeout", "120", "--keep-alive", "5"]

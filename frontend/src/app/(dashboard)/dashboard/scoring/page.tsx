@@ -50,7 +50,7 @@ export default function ScoringPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Model Scoring</h1>
+          <h1 className="text-3xl font-bold">Model Performance</h1>
           <p className="text-muted-foreground">Inspect trained model metrics and current score distribution.</p>
         </div>
         <Button onClick={rescoreAll} disabled={isRescoring}>
@@ -61,7 +61,7 @@ export default function ScoringPage() {
 
       <Tabs defaultValue="metrics" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="metrics">Model Metrics</TabsTrigger>
+          <TabsTrigger value="metrics">Model Performance</TabsTrigger>
           <TabsTrigger value="distribution">Score Distribution</TabsTrigger>
         </TabsList>
 

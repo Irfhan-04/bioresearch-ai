@@ -1,8 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
-  images: {
-    domains: [],
+  experimental: {
+    // typedRoutes: true,
   },
 }
+
 module.exports = nextConfig

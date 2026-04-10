@@ -1,9 +1,10 @@
 """Dashboard stats endpoint used by the frontend dashboard page."""
 
-from datetime import date
+import json
+from pathlib import Path
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import func as sa_func, select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_active_user, get_db
@@ -13,52 +14,42 @@ from app.models.user import User
 router = APIRouter()
 
 
-@router.get("/stats", summary="Get dashboard summary statistics")
+@router.get('/stats', summary='Get dashboard summary statistics')
 async def get_dashboard_stats(
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Return the researcher metrics shown on the main dashboard page."""
     accessible_researchers = Researcher.user_id == current_user.id
 
-    today = date.today()
-    month_start = date(today.year, today.month, 1)
-    if today.month == 12:
-        next_month_start = date(today.year + 1, 1, 1)
-    else:
-        next_month_start = date(today.year, today.month + 1, 1)
-
-    total_researchers = await db.scalar(
-        select(sa_func.count(Researcher.id)).where(accessible_researchers)
-    )
-
-    high_relevance_researchers = await db.scalar(
-        select(sa_func.count(Researcher.id)).where(
+    total = await db.scalar(select(func.count(Researcher.id)).where(accessible_researchers))
+    high = await db.scalar(
+        select(func.count(Researcher.id)).where(
             accessible_researchers,
-            Researcher.relevance_score >= 70,
+            Researcher.relevance_tier == 'HIGH',
         )
     )
 
-    researchers_this_month = await db.scalar(
-        select(sa_func.count(Researcher.id)).where(
-            accessible_researchers,
-            Researcher.created_at >= month_start,
-            Researcher.created_at < next_month_start,
-        )
+    area_rows = await db.execute(
+        select(Researcher.research_area, func.count(Researcher.id))
+        .where(accessible_researchers, Researcher.research_area.isnot(None))
+        .group_by(Researcher.research_area)
     )
+    area_breakdown = [{'area': row[0], 'count': row[1]} for row in area_rows.fetchall()]
 
-    average_score = await db.scalar(
-        select(sa_func.avg(Researcher.relevance_score)).where(
-            accessible_researchers,
-            Researcher.relevance_score.isnot(None),
-        )
-    )
+    eval_path = Path(__file__).parents[4] / 'ml' / 'reports' / 'eval_v1.json'
+    model_meta: dict = {}
+    if eval_path.exists():
+        with eval_path.open() as f:
+            model_meta = json.load(f)
 
     return {
-        "total_researchers": int(total_researchers or 0),
-        "high_relevance_researchers": int(high_relevance_researchers or 0),
-        "researchers_this_month": int(researchers_this_month or 0),
-        "average_score": (
-            round(float(average_score), 1) if average_score is not None else 0.0
-        ),
+        'total_researchers': int(total or 0),
+        'high_relevance': int(high or 0),
+        'research_areas_covered': len(area_breakdown),
+        'queries_today': 0,
+        'area_breakdown': area_breakdown,
+        'model_version': model_meta.get('model_type', 'XGBoost v1'),
+        'model_trained_at': model_meta.get('trained_at'),
+        'n_training_samples': model_meta.get('n_training_samples'),
+        'macro_f1': model_meta.get('macro_f1'),
     }

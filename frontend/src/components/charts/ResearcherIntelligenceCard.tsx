@@ -14,7 +14,7 @@ export function ResearcherIntelligenceCard({ intelligence, generatedAt }: Props)
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Research Intelligence</CardTitle>
+          <CardTitle>Researcher Intelligence</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">No intelligence available yet. Run enrichment on this profile.</p>
@@ -26,7 +26,7 @@ export function ResearcherIntelligenceCard({ intelligence, generatedAt }: Props)
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Research Intelligence</CardTitle>
+        <CardTitle>Researcher Intelligence</CardTitle>
         {generatedAt && <p className="text-xs text-muted-foreground">Generated {new Date(generatedAt).toLocaleString()}</p>}
       </CardHeader>
       <CardContent className="space-y-4">
