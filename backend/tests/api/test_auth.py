@@ -8,7 +8,9 @@ from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.security import verify_password
+# FIX: was `verify_password` (returns bool — useless for creating a hash).
+#      The inactive-user fixture needs get_password_hash to store a real bcrypt hash.
+from app.core.security import get_password_hash
 from app.models.user import User
 
 # ============================================================================
@@ -40,7 +42,6 @@ class TestUserRegistration:
         assert data["success"] is True
         assert "user_id" in data["data"]
 
-        # Verify user created in database
         result = await db_session.execute(
             select(User).where(User.email == "newuser@example.com")
         )
@@ -140,10 +141,11 @@ class TestUserLogin:
         self, client: AsyncClient, db_session: AsyncSession
     ):
         """Test login with inactive user"""
-        # Create inactive user
+        # FIX: verify_password(plain, hash) → bool. We need a real bcrypt hash here,
+        #      so use get_password_hash() instead.
         inactive_user = User(
             email="inactive@example.com",
-            password_hash=verify_password("TestPass123!", "$2b$12$abcdef"),
+            password_hash=get_password_hash("TestPass123!"),
             full_name="Inactive User",
             is_active=False,
         )
@@ -171,7 +173,6 @@ class TestTokenRefresh:
 
     async def test_refresh_valid_token(self, client: AsyncClient, test_user: User):
         """Test refreshing with valid refresh token"""
-        # First login to get tokens
         login_response = await client.post(
             "/api/v1/auth/login",
             json={"email": test_user.email, "password": "TestPass123!"},
@@ -179,7 +180,6 @@ class TestTokenRefresh:
 
         refresh_token = login_response.json()["refresh_token"]
 
-        # Refresh token
         response = await client.post(
             "/api/v1/auth/refresh", json={"refresh_token": refresh_token}
         )
@@ -280,7 +280,7 @@ class TestPasswordReset:
             "/api/v1/auth/forgot-password", json={"email": "nonexistent@example.com"}
         )
 
-        # Should still return success (security)
+        # Should still return 200 (avoid user enumeration)
         assert response.status_code == 200
 
 
@@ -303,7 +303,6 @@ class TestEmailVerification:
         db_session: AsyncSession,
     ):
         """Test resending verification email"""
-        # Mark user as unverified
         test_user.is_verified = False
         await db_session.commit()
 

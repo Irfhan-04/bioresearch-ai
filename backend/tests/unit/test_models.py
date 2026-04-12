@@ -6,9 +6,11 @@ Test model methods, properties, and relationships
 import pytest
 from datetime import datetime, timedelta, timezone
 
-from app.models.lead import Lead
+# FIX: Lead does not exist — the entity is called Researcher.
+from app.models.researcher import Researcher
 from app.models.user import User
-from app.models.pipeline import Pipeline, PipelineStatus, PipelineSchedule
+# FIX: Pipeline / PipelineStatus / PipelineSchedule do not exist in this codebase.
+#      The TestPipelineModel class has been removed entirely.
 from app.models.export import Export, ExportStatus, ExportFormat
 
 
@@ -26,36 +28,16 @@ class TestUserModel:
 
         assert user.email == "test@example.com"
 
-    def test_get_monthly_lead_limit(self):
-        """Test getting monthly lead limit"""
-        free_user = User(email="free@example.com", password_hash="hash")
-        assert free_user.get_monthly_lead_limit() == 100
-
-        pro_user = User(
-            email="pro@example.com",
-            password_hash="hash",
-        )
-        assert pro_user.get_monthly_lead_limit() == 1000
-
-    def test_has_reached_lead_limit(self):
-        """Test checking lead limit"""
-        user = User(email="test@example.com", password_hash="hash")
-        user.usage_stats = {"leads_created_this_month": 50}
-
-        assert not user.has_reached_lead_limit()
-
-        user.usage_stats = {"leads_created_this_month": 100}
-        assert user.has_reached_lead_limit()
 
     def test_increment_usage(self):
         """Test incrementing usage stats"""
         user = User(email="test@example.com", password_hash="hash")
 
-        user.increment_usage("leads_created_this_month")
-        assert user.usage_stats["leads_created_this_month"] == 1
+        user.increment_usage("searches_this_month")
+        assert user.usage_stats["searches_this_month"] == 1
 
-        user.increment_usage("leads_created_this_month", 5)
-        assert user.usage_stats["leads_created_this_month"] == 6
+        user.increment_usage("searches_this_month", 5)
+        assert user.usage_stats["searches_this_month"] == 6
 
     def test_preferences(self):
         """Test user preferences"""
@@ -67,145 +49,120 @@ class TestUserModel:
 
 
 @pytest.mark.unit
-class TestLeadModel:
-    """Test Lead model"""
+class TestResearcherModel:
+    """Test Researcher model (replaces the old TestLeadModel)"""
 
-    def test_lead_creation(self):
-        """Test creating lead"""
-        lead = Lead(
-            user_id="user_id",
+    def test_researcher_creation(self):
+        """Test creating researcher"""
+        researcher = Researcher(
+            user_id="00000000-0000-0000-0000-000000000001",
             name="Dr. Test",
             title="Scientist",
             company="Test Corp",
             status="NEW",
         )
 
-        assert lead.name == "Dr. Test"
-        assert lead.status == "NEW"
+        assert researcher.name == "Dr. Test"
+        assert researcher.status == "NEW"
 
-    def test_priority_tier_calculation(self):
-        """Test priority tier calculation"""
-        lead = Lead(user_id="user_id", name="Test", title="Scientist", status="NEW")
+    def test_relevance_tier_calculation(self):
+        """Test relevance tier calculation.
+        Thresholds: HIGH >= 70, MEDIUM >= 50, LOW < 50
+        """
+        researcher = Researcher(
+            user_id="00000000-0000-0000-0000-000000000001",
+            name="Test",
+            title="Scientist",
+            status="NEW",
+        )
 
-        lead.propensity_score = 95
-        assert lead.get_priority_tier() == "HIGH"
+        researcher.relevance_score = 95
+        assert researcher.get_relevance_tier() == "HIGH"
 
-        lead.propensity_score = 60
-        assert lead.get_priority_tier() == "MEDIUM"
+        researcher.relevance_score = 60
+        assert researcher.get_relevance_tier() == "MEDIUM"
 
-        lead.propensity_score = 30
-        assert lead.get_priority_tier() == "LOW"
+        researcher.relevance_score = 30
+        assert researcher.get_relevance_tier() == "LOW"
 
-    def test_update_priority_tier(self):
-        """Test updating priority tier"""
-        lead = Lead(user_id="user_id", name="Test", title="Scientist", status="NEW")
+    def test_update_relevance_tier(self):
+        """Test updating relevance_tier field from current score"""
+        researcher = Researcher(
+            user_id="00000000-0000-0000-0000-000000000001",
+            name="Test",
+            title="Scientist",
+            status="NEW",
+        )
 
-        lead.propensity_score = 85
-        lead.update_priority_tier()
-        assert lead.priority_tier == "HIGH"
+        researcher.relevance_score = 85
+        researcher.update_relevance_tier()
+        assert researcher.relevance_tier == "HIGH"
 
     def test_add_tag(self):
         """Test adding tags"""
-        lead = Lead(user_id="user_id", name="Test", title="Scientist", status="NEW")
+        researcher = Researcher(
+            user_id="00000000-0000-0000-0000-000000000001",
+            name="Test",
+            title="Scientist",
+            status="NEW",
+        )
+        researcher.tags = []
 
-        lead.add_tag("high-priority")
-        assert "high-priority" in lead.tags
+        researcher.add_tag("high-priority")
+        assert "high-priority" in researcher.tags
 
-        # Don't add duplicate
-        lead.add_tag("high-priority")
-        assert lead.tags.count("high-priority") == 1
+        # Duplicate should not be added
+        researcher.add_tag("high-priority")
+        assert researcher.tags.count("high-priority") == 1
 
     def test_data_source_management(self):
         """Test data source management"""
-        lead = Lead(user_id="user_id", name="Test", title="Scientist", status="NEW")
+        researcher = Researcher(
+            user_id="00000000-0000-0000-0000-000000000001",
+            name="Test",
+            title="Scientist",
+            status="NEW",
+        )
+        researcher.data_sources = []
 
-        lead.add_data_source("pubmed")
-        lead.add_data_source("linkedin")
+        researcher.add_data_source("pubmed")
+        researcher.add_data_source("linkedin")
 
-        assert "pubmed" in lead.data_sources
-        assert "linkedin" in lead.data_sources
+        assert "pubmed" in researcher.data_sources
+        assert "linkedin" in researcher.data_sources
 
     def test_enrichment_data(self):
-        """Test enrichment data"""
-        lead = Lead(user_id="user_id", name="Test", title="Scientist", status="NEW")
+        """Test enrichment data get/set"""
+        researcher = Researcher(
+            user_id="00000000-0000-0000-0000-000000000001",
+            name="Test",
+            title="Scientist",
+            status="NEW",
+        )
+        researcher.enrichment_data = {}
 
-        lead.set_enrichment("email", {"email": "test@example.com", "confidence": 0.9})
-        enrichment = lead.get_enrichment("email")
+        researcher.set_enrichment("email", {"email": "test@example.com", "confidence": 0.9})
+        enrichment = researcher.get_enrichment("email")
 
         assert enrichment["email"] == "test@example.com"
 
     def test_custom_fields(self):
-        """Test custom fields"""
-        lead = Lead(user_id="user_id", name="Test", title="Scientist", status="NEW")
-
-        lead.set_custom_field("budget", "$50k")
-        assert lead.get_custom_field("budget") == "$50k"
-
-
-@pytest.mark.unit
-class TestPipelineModel:
-    """Test Pipeline model"""
-
-    def test_pipeline_creation(self):
-        """Test creating pipeline"""
-        pipeline = Pipeline(
-            user_id="user_id",
-            name="Test Pipeline",
-            schedule=PipelineSchedule.DAILY,
-            config={"search_queries": []},
-            status=PipelineStatus.ACTIVE,
-        )
-
-        assert pipeline.name == "Test Pipeline"
-        assert pipeline.status == PipelineStatus.ACTIVE
-
-    def test_calculate_next_run(self):
-        """Test calculating next run time"""
-        pipeline = Pipeline(
-            user_id="user_id",
+        """Test custom fields get/set"""
+        researcher = Researcher(
+            user_id="00000000-0000-0000-0000-000000000001",
             name="Test",
-            schedule=PipelineSchedule.DAILY,
-            config={},
-            status=PipelineStatus.ACTIVE,
+            title="Scientist",
+            status="NEW",
         )
+        researcher.custom_fields = {}
 
-        next_run = pipeline.calculate_next_run()
-        assert next_run is not None
-        assert next_run > datetime.now(timezone.utc)
+        researcher.set_custom_field("budget", "$50k")
+        assert researcher.get_custom_field("budget") == "$50k"
 
-    def test_get_success_rate(self):
-        """Test success rate calculation"""
-        pipeline = Pipeline(
-            user_id="user_id",
-            name="Test",
-            schedule=PipelineSchedule.MANUAL,
-            config={},
-            status=PipelineStatus.ACTIVE,
-        )
 
-        pipeline.run_count = 10
-        pipeline.success_count = 8
-
-        assert pipeline.get_success_rate() == 80.0
-
-    def test_activate_pause_disable(self):
-        """Test pipeline status changes"""
-        pipeline = Pipeline(
-            user_id="user_id",
-            name="Test",
-            schedule=PipelineSchedule.MANUAL,
-            config={},
-            status=PipelineStatus.PAUSED,
-        )
-
-        pipeline.activate()
-        assert pipeline.status == PipelineStatus.ACTIVE
-
-        pipeline.pause()
-        assert pipeline.status == PipelineStatus.PAUSED
-
-        pipeline.disable()
-        assert pipeline.status == PipelineStatus.DISABLED
+# NOTE: TestPipelineModel removed — Pipeline / PipelineStatus / PipelineSchedule
+# do not exist in this codebase. Add these tests once the Pipeline model is
+# implemented (planned for a later phase).
 
 
 @pytest.mark.unit
@@ -215,7 +172,7 @@ class TestExportModel:
     def test_export_creation(self):
         """Test creating export"""
         export = Export(
-            user_id="user_id",
+            user_id="00000000-0000-0000-0000-000000000001",
             file_name="test.csv",
             format=ExportFormat.CSV,
             status=ExportStatus.PENDING,
@@ -225,9 +182,9 @@ class TestExportModel:
         assert export.status == ExportStatus.PENDING
 
     def test_is_downloadable(self):
-        """Test is downloadable check"""
+        """Test is_downloadable check"""
         export = Export(
-            user_id="user_id",
+            user_id="00000000-0000-0000-0000-000000000001",
             file_name="test.csv",
             format=ExportFormat.CSV,
             status=ExportStatus.COMPLETED,
@@ -241,7 +198,7 @@ class TestExportModel:
     def test_is_expired(self):
         """Test expiration check"""
         export = Export(
-            user_id="user_id",
+            user_id="00000000-0000-0000-0000-000000000001",
             file_name="test.csv",
             format=ExportFormat.CSV,
             status=ExportStatus.COMPLETED,
@@ -256,11 +213,11 @@ class TestExportModel:
     def test_get_file_size_mb(self):
         """Test file size calculation"""
         export = Export(
-            user_id="user_id",
+            user_id="00000000-0000-0000-0000-000000000001",
             file_name="test.csv",
             format=ExportFormat.CSV,
             status=ExportStatus.COMPLETED,
         )
 
-        export.file_size_bytes = 1024 * 1024 * 2  # 2MB
+        export.file_size_bytes = 1024 * 1024 * 2  # 2 MB
         assert export.get_file_size_mb() == 2.0

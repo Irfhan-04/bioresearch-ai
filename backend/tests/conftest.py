@@ -8,17 +8,15 @@ os.environ.setdefault("ENV_FILE", ".env.test")
 
 import asyncio
 from datetime import datetime, timedelta
-from typing import AsyncGenerator, Generator
+from typing import AsyncGenerator
 
 import pytest
-from fastapi.testclient import TestClient
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
                                     create_async_engine)
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
 
-from app.core.config import settings
+from app.core.config import get_async_database_url, settings
 from app.core.database import Base, get_async_db
 from app.core.security import create_access_token, get_password_hash
 from app.main import app
@@ -42,19 +40,17 @@ def event_loop():
 @pytest.fixture(scope="session")
 async def test_engine():
     """Create test database engine"""
-    # Use test database URL from environment-driven settings
-    test_db_url = settings.DATABASE_URL.replace("postgresql+psycopg2://", "postgresql+asyncpg://", 1)
+    # Use the project's canonical async URL helper instead of an inline replace
+    test_db_url = get_async_database_url()
 
     engine = create_async_engine(test_db_url, poolclass=NullPool, echo=False)
 
-    # Create all tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 
     yield engine
 
-    # Cleanup
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
 
@@ -149,14 +145,17 @@ async def admin_user(db_session: AsyncSession) -> User:
     return user
 
 
+# FIX: test_token and auth_headers must be async because test_user is an
+# async fixture. A sync fixture cannot reliably depend on an async one in
+# strict pytest-asyncio mode — it receives a coroutine object, not a User.
 @pytest.fixture
-def test_token(test_user: User) -> str:
+async def test_token(test_user: User) -> str:
     """Create JWT token for test user"""
     return create_access_token(data={"sub": str(test_user.id)})
 
 
 @pytest.fixture
-def auth_headers(test_token: str) -> dict:
+async def auth_headers(test_token: str) -> dict:
     """Create authorization headers"""
     return {"Authorization": f"Bearer {test_token}"}
 
@@ -269,30 +268,3 @@ def faker():
 def freeze_time():
     """Freeze time for consistent testing"""
     return datetime(2024, 1, 15, 12, 0, 0)
-
-
-# ============================================================================
-# STRIPE MOCK FIXTURES (Week 2 - Fix 1.3)
-# ============================================================================
-
-
-@pytest.fixture(autouse=True)
-def mock_stripe(monkeypatch):
-    """Mock all Stripe API calls in tests — never hit real Stripe."""
-    import unittest.mock as mock
-
-    monkeypatch.setattr("stripe.Customer.create", mock.MagicMock(return_value={"id": "cus_test"}))
-    monkeypatch.setattr("stripe.checkout.Session.create", mock.MagicMock(return_value={"id": "cs_test", "url": "https://checkout.stripe.com/test"}))
-    monkeypatch.setattr("stripe.billing_portal.Session.create", mock.MagicMock(return_value={"url": "https://billing.stripe.com/test"}))
-    monkeypatch.setattr("stripe.Subscription.retrieve", mock.MagicMock(return_value={
-        "id": "sub_test",
-        "status": "active",
-        "customer": "cus_test",
-        "current_period_end": 9999999999,
-        "items": {"data": [{"price": {"id": "price_pro_placeholder"}}]},
-    }))
-    monkeypatch.setattr("stripe.Webhook.construct_event", mock.MagicMock(return_value={
-        "type": "checkout.session.completed",
-        "id": "evt_test",
-        "data": {"object": {"customer": "cus_test", "subscription": "sub_test", "metadata": {"user_id": "00000000-0000-0000-0000-000000000000"}}},
-    }))
