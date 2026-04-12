@@ -33,7 +33,13 @@ class ExportService:
 
     def __init__(self):
         """Initialize export service"""
-        self.storage = get_storage_service()
+                self._storage = None
+
+    @property
+    def storage(self):
+        if self._storage is None:
+            self._storage = get_storage_service()
+        return self._storage
 
     async def create_export(
         self,

@@ -35,13 +35,39 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifespan events — startup and shutdown."""
-    logger.info("Starting BioResearch AI...")
-    logger.info(
-        "Environment: production" if not settings.DEBUG else "Environment: development"
-    )
-    logger.info(f"Debug mode: {settings.DEBUG}")
+    """
+    Application lifespan — startup and shutdown.
 
+    On every deploy:
+      1. Runs Alembic migrations (idempotent — safe to run on every boot)
+      2. Creates the superuser account if missing
+      3. Seeds demo researchers if SEED_ON_STARTUP=true
+
+    This replaces the need for manual shell commands on platforms without
+    shell access (Render free tier, Railway free tier).
+    """
+    logger.info("Starting BioResearch AI...")
+
+    # ── Step 1: Run Alembic migrations ────────────────────────────────────────
+    # Safe to run on every startup — Alembic is idempotent (skips applied migrations).
+    try:
+        import subprocess
+        result = subprocess.run(
+            ["python", "-m", "alembic", "upgrade", "head"],
+            capture_output=True,
+            text=True,
+            cwd="/app",  # Render working directory
+        )
+        if result.returncode == 0:
+            logger.info("✅ Alembic migrations applied")
+            if result.stdout:
+                logger.info(result.stdout.strip())
+        else:
+            logger.error(f"❌ Alembic migration failed:\n{result.stderr}")
+    except Exception as e:
+        logger.error(f"❌ Could not run migrations: {e}")
+
+    # ── Step 2: Database connection check ─────────────────────────────────────
     try:
         await init_db()
         is_connected = await check_db_connection()
@@ -52,6 +78,7 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"❌ Database initialization failed: {e}")
 
+    # ── Step 3: Redis connection check ────────────────────────────────────────
     try:
         redis = await get_async_redis()
         await redis.ping()
@@ -59,10 +86,42 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"❌ Redis connection failed: {e}")
 
-    logger.info("🚀 API is ready!")
+    # ── Step 4: Auto-create superuser ─────────────────────────────────────────
+    try:
+        from scripts.create_superuser import create_superuser_if_missing
+        await create_superuser_if_missing()
+    except Exception as e:
+        logger.error(f"❌ Superuser creation failed: {e}")
+
+    # ── Step 5: Seed demo data (only if SEED_ON_STARTUP=true) ─────────────────
+    # After first successful seed: set SEED_ON_STARTUP=false in Render env vars.
+    # The seed script is idempotent (skips duplicates) but hitting PubMed on
+    # every boot wastes startup time and may trigger rate limits.
+    if settings.SEED_ON_STARTUP:
+        logger.info("SEED_ON_STARTUP=true — seeding demo researchers...")
+        try:
+            import subprocess
+            result = subprocess.run(
+                ["python", "scripts/seed_demo_data.py"],
+                capture_output=True,
+                text=True,
+                cwd="/app",
+            )
+            if result.returncode == 0:
+                logger.info("✅ Demo seed complete")
+                logger.info(result.stdout.strip())
+            else:
+                logger.error(f"❌ Seed failed:\n{result.stderr}")
+        except Exception as e:
+            logger.error(f"❌ Could not run seed script: {e}")
+    else:
+        logger.info("SEED_ON_STARTUP=false — skipping demo seed")
+
+    logger.info("🚀 BioResearch AI is ready!")
     yield
 
-    logger.info("Shutting down API...")
+    # ── Shutdown ───────────────────────────────────────────────────────────────
+    logger.info("Shutting down...")
     try:
         await close_db()
         logger.info("✅ Database connections closed")
@@ -74,8 +133,6 @@ async def lifespan(app: FastAPI):
         logger.info("✅ Redis connections closed")
     except Exception as e:
         logger.error(f"❌ Error closing Redis: {e}")
-
-    logger.info("👋 API shutdown complete")
 
 
 # ============================================================================

@@ -81,7 +81,7 @@ class Settings(BaseSettings):
     BACKEND_CORS_ORIGINS: List[str] = [
         "http://localhost:3000",
         "http://localhost:8000",
-        "https://bioresearch-ai.vercel.app/",
+        "https://bioresearch-ai.vercel.app",
     ]
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
@@ -110,11 +110,11 @@ class Settings(BaseSettings):
         )
 
     # Database - Supabase PostgreSQL
-    SUPABASE_URL: str
-    SUPABASE_KEY: str
-    SUPABASE_SERVICE_KEY: str
+    SUPABASE_URL: Optional[str] = None
+    SUPABASE_KEY: Optional[str] = None
+    SUPABASE_SERVICE_KEY: Optional[str] = None
 
-    DATABASE_URL: str
+    DATABASE_URL: Optional[str] = None
     DATABASE_POOL_SIZE: int = 10
     DATABASE_MAX_OVERFLOW: int = 20
     DATABASE_POOL_TIMEOUT: int = 30
@@ -123,12 +123,12 @@ class Settings(BaseSettings):
     USE_IPV4_ONLY: bool = True
 
     # Redis - Upstash
-    REDIS_URL: str
+    REDIS_URL: Optional[str] = None
     REDIS_CACHE_TTL: int = 3600
     REDIS_SESSION_TTL: int = 86400
 
     # Email - Resend
-    RESEND_API_KEY: str
+    RESEND_API_KEY: Optional[str] = None
     RESEND_FROM_EMAIL: str = "noreply@yourdomain.com"
 
     # Object Storage
@@ -137,6 +137,11 @@ class Settings(BaseSettings):
     # External APIs — PubMed / NCBI Entrez
     PUBMED_EMAIL: str
     PUBMED_API_KEY: Optional[str] = None
+
+   # Set SEED_ON_STARTUP=true in Render env vars on first deploy only.
+    # After seeding completes, set it back to false to prevent re-seeding on every restart.
+    SEED_ON_STARTUP: bool = False
+
     # Anthropic — LLM intelligence (Component 3, Week 3)
     # Optional — if absent, intelligence_service returns None gracefully
     ANTHROPIC_API_KEY: Optional[str] = None
@@ -168,18 +173,6 @@ class Settings(BaseSettings):
     RATE_LIMIT_PER_MINUTE: int = 60
     RATE_LIMIT_PER_HOUR: int = 1000
 
-    # Subscription Limits
-    FREE_TIER_LEADS_PER_MONTH: int = 100
-    PRO_TIER_LEADS_PER_MONTH: int = 1000
-    TEAM_TIER_LEADS_PER_MONTH: int = 5000
-
-    TIER_LIMITS: dict = {
-        "free": {"researchers": 100, "searches": 50, "exports": 10, "api_calls": 500},
-        "pro": {"researchers": 1000, "searches": 500, "exports": 100, "api_calls": 5000},
-        "team": {"researchers": 5000, "searches": 2000, "exports": 500, "api_calls": 20000},
-        "enterprise": {"researchers": 999999, "searches": 999999, "exports": 999999, "api_calls": 999999},
-    }
-
     # Scoring Weights
     DEFAULT_ROLE_WEIGHT: int = 30
     DEFAULT_PUBLICATION_WEIGHT: int = 40
@@ -192,16 +185,6 @@ class Settings(BaseSettings):
 
     FIRST_SUPERUSER_EMAIL: str = "admin@yourdomain.com"
     FIRST_SUPERUSER_PASSWORD: str = "ChangeMe123!"
-
-    # Feature Flags
-    ENABLE_ML_SCORING: bool = False
-    ENABLE_EMAIL_NOTIFICATIONS: bool = True
-    ENABLE_WEBHOOKS: bool = True
-    ENABLE_BACKGROUND_JOBS: bool = True
-    ENABLE_SMART_ALERTS: bool = True
-    HIGH_VALUE_LEAD_THRESHOLD: int = 70
-    DAILY_DIGEST_ENABLED: bool = True
-    SCORE_RECALC_BATCH_SIZE: int = 500
 
     model_config = SettingsConfigDict(
         env_file=os.environ.get("ENV_FILE", ".env"),

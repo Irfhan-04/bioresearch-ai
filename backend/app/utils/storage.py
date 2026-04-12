@@ -20,15 +20,25 @@ class StorageService:
     """
 
     def __init__(self):
-        """Initialize Supabase client"""
-        self.client: Client = create_client(
-            settings.SUPABASE_URL,
-            settings.SUPABASE_SERVICE_KEY,  # Use service key for admin access
-        )
+        """
+        Initialize Supabase storage client.
+        Gracefully disabled if SUPABASE_URL / SUPABASE_SERVICE_KEY are not set.
+        For the portfolio deployment, exports write to local disk instead.
+        """
+        self._enabled = bool(settings.SUPABASE_URL and settings.SUPABASE_SERVICE_KEY)
+        if self._enabled:
+            self.client: Optional[Client] = create_client(
+                settings.SUPABASE_URL,
+                settings.SUPABASE_SERVICE_KEY,
+            )
+        else:
+            self.client = None
+            import logging
+            logging.getLogger(__name__).warning(
+                "StorageService: SUPABASE_URL/SERVICE_KEY not set — "
+                "cloud storage disabled. Exports will use local file system."
+            )
         self.bucket_name = settings.SUPABASE_STORAGE_BUCKET
-
-        # Ensure bucket exists
-        self._ensure_bucket_exists()
 
     def _ensure_bucket_exists(self):
         """
