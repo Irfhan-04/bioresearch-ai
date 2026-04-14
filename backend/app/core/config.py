@@ -186,6 +186,10 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER_EMAIL: str = "admin@yourdomain.com"
     FIRST_SUPERUSER_PASSWORD: str = "ChangeMe123!"
 
+    # Daily search limits — no payment, just two tiers
+    GUEST_DAILY_SEARCHES: int = 3       # IP-based, no login required
+    REGISTERED_DAILY_SEARCHES: int = 20  # Free account, email + password
+
     model_config = SettingsConfigDict(
         env_file=os.environ.get("ENV_FILE", ".env"),
         env_file_encoding="utf-8",

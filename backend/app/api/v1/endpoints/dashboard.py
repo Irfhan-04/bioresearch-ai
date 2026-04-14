@@ -6,20 +6,20 @@ from pathlib import Path
 from fastapi import APIRouter, Depends
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.core.deps import get_current_active_user, get_db
+from typing import Optional
+from app.core.deps import get_optional_user
+from app.core.deps import get_current_active_user, get_db, get_optional_user
 from app.models.researcher import Researcher
 from app.models.user import User
 
 router = APIRouter()
 
-
 @router.get('/stats', summary='Get dashboard summary statistics')
 async def get_dashboard_stats(
-    current_user: User = Depends(get_current_active_user),
+    current_user: Optional[User] = Depends(get_optional_user),
     db: AsyncSession = Depends(get_db),
 ):
-    accessible_researchers = Researcher.user_id == current_user.id
+    accessible_researchers = True
 
     total = await db.scalar(select(func.count(Researcher.id)).where(accessible_researchers))
     high = await db.scalar(

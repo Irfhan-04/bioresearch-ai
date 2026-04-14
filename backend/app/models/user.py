@@ -10,7 +10,7 @@ from sqlalchemy import Boolean, Column, DateTime, String
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-
+from sqlalchemy import Boolean, Column, DateTime, Integer, String
 from app.core.database import Base
 
 
@@ -58,6 +58,16 @@ class User(Base):
     # Usage Tracking (non-billing — tracks searches and enrichments for display only)
     usage_stats = Column(JSONB, default=dict, nullable=False)
     # Example: {"researchers_created_this_month": 45, "searches_this_month": 12}
+
+    # Daily search tracking for rate limiting
+    # Resets at midnight UTC. Guest limits tracked by IP in Redis.
+    daily_searches = Column(Integer, default=0, nullable=False,
+        server_default="0",
+        comment="Searches performed today by this registered user")
+    daily_searches_reset_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(), nullable=False,
+        comment="Last time daily_searches was reset to 0")
 
     # UI Preferences
     preferences = Column(JSONB, default=dict, nullable=False)

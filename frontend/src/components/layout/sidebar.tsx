@@ -54,6 +54,24 @@ export function Sidebar() {
       </nav>
 
       <div className="space-y-2 border-t border-[rgba(255,255,255,0.055)] p-3">
+        {/* Guest usage indicator — only shows when not logged in */}
+        {!user && (
+          <div className="mx-3 mb-2 rounded-lg border border-[rgba(0,214,143,0.15)] bg-[rgba(0,214,143,0.05)] px-3 py-2.5">
+            <p className="mb-1 text-[11px] font-medium uppercase tracking-widest text-[#00d68f]">
+              Guest mode
+            </p>
+            <p className="text-[11px] text-zinc-500">
+              3 searches/day
+            </p>
+            <Link
+              href="/register"
+              className="mt-1.5 block text-[11px] font-medium text-[#00d68f] hover:underline"
+            >
+              Sign up free for 20/day →
+            </Link>
+          </div>
+        )}
+
         <Link href="/dashboard/settings" className="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-zinc-500 transition-all duration-150 hover:bg-white/[0.04] hover:text-zinc-200">
           <Settings className="h-4 w-4 text-zinc-600 transition-colors group-hover:text-zinc-300" />
           <span>Settings</span>
@@ -63,7 +81,7 @@ export function Sidebar() {
           <DropdownMenuTrigger asChild>
             <button className="group flex w-full items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-white/[0.04]">
               <Avatar className="h-8 w-8 shrink-0 ring-1 ring-[rgba(0,214,143,0.25)]">
-                <AvatarFallback className="font-syne text-xs font-700 text-[#00d68f] bg-[rgba(0,214,143,0.1)]">
+                <AvatarFallback className="font-syne bg-[rgba(0,214,143,0.1)] text-xs font-700 text-[#00d68f]">
                   {user?.full_name ? initials(user.full_name) : 'U'}
                 </AvatarFallback>
               </Avatar>

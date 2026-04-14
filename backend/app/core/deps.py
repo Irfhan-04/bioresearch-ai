@@ -9,8 +9,7 @@ from typing import AsyncGenerator, Optional
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, Security, status
-from fastapi.security import (APIKeyHeader, HTTPAuthorizationCredentials,
-                              HTTPBearer)
+from fastapi.security import (APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer)
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,6 +17,7 @@ from app.core.cache import Cache, CacheKey
 from app.core.database import get_async_db
 from app.core.security import verify_api_key, verify_token
 from app.schemas.token import TokenData
+from fastapi import Depends, HTTPException, Request, Security, status
 
 # Security schemes
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -262,10 +262,6 @@ async def get_current_superuser(
 
     return current_user
 
-
-
-
-
 async def check_researcher_quota(current_user: User = Depends(get_current_active_user)) -> None:
     """Compatibility quota dependency (currently no-op)."""
     _ = current_user
@@ -274,3 +270,115 @@ async def check_researcher_quota(current_user: User = Depends(get_current_active
 async def get_redis():
     """Return redis cache backend."""
     return Cache
+
+async def get_optional_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Security(bearer_scheme),
+    db: AsyncSession = Depends(get_db),
+) -> Optional["User"]:
+    """
+    Returns the authenticated User if a valid Bearer token is present,
+    or None for unauthenticated (guest) requests.
+
+    Used by endpoints that allow guest access with reduced limits.
+    """
+    if not credentials:
+        return None
+    token_data = verify_token(credentials.credentials, token_type="access")
+    if not token_data:
+        return None
+    user_id = token_data.get("sub")
+    if not user_id:
+        return None
+    from app.models.user import User
+    result = await db.execute(
+        select(User).where(User.id == user_id, User.is_active == True)
+    )
+    return result.scalar_one_or_none()
+
+
+async def check_search_quota(
+    request: Request,
+    current_user: Optional["User"] = Depends(get_optional_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """
+    Enforces daily search limits for both guests and registered users.
+
+    Guest (no token):      3 searches/day, keyed by IP address in Redis
+    Registered (free):    20 searches/day, keyed by user_id in Redis
+
+    Returns a dict with quota information so the endpoint can include it
+    in the response:
+        {"is_guest": bool, "searches_used": int, "searches_limit": int}
+
+    Raises HTTP 429 when the limit is exceeded.
+    """
+    from app.core.config import settings
+    from app.core.cache import get_async_redis
+    from datetime import datetime, timezone
+    import time
+
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    if current_user is None:
+        # Guest: key by IP
+        ip = request.headers.get("X-Forwarded-For", "").split(",")[0].strip()
+        if not ip:
+            ip = getattr(request.client, "host", "unknown")
+        redis_key = f"guest_searches:{ip}:{today}"
+        limit = settings.GUEST_DAILY_SEARCHES
+    else:
+        # Registered user: key by user_id
+        redis_key = f"user_searches:{current_user.id}:{today}"
+        limit = settings.REGISTERED_DAILY_SEARCHES
+
+    try:
+        redis = await get_async_redis()
+        current_count = await redis.get(redis_key)
+        count = int(current_count) if current_count else 0
+
+        if count >= limit:
+            raise HTTPException(
+                status_code=429,
+                detail={
+                    "error": "daily_limit_exceeded",
+                    "message": (
+                        f"You've used all {limit} daily searches."
+                        + (" Sign up free for 20 searches/day."
+                           if current_user is None
+                           else " Your limit resets at midnight UTC.")
+                    ),
+                    "searches_used": count,
+                    "searches_limit": limit,
+                    "is_guest": current_user is None,
+                    "resets_at": f"{today}T23:59:59Z",
+                },
+                headers={"Retry-After": str(
+                    int(time.mktime(datetime.strptime(
+                        f"{today} 23:59:59", "%Y-%m-%d %H:%M:%S"
+                    ).timetuple())) - int(time.time())
+                )},
+            )
+
+        # Increment counter, expire at end of day
+        pipe = redis.pipeline()
+        pipe.incr(redis_key)
+        pipe.expireat(redis_key, int(time.mktime(
+            datetime.strptime(f"{today} 23:59:59", "%Y-%m-%d %H:%M:%S").timetuple()
+        )))
+        await pipe.execute()
+
+        return {
+            "is_guest": current_user is None,
+            "searches_used": count + 1,
+            "searches_limit": limit,
+        }
+    except HTTPException:
+        raise
+    except Exception:
+        # Redis failure — fail open (don't block users if Redis is down)
+        return {
+            "is_guest": current_user is None,
+            "searches_used": 0,
+            "searches_limit": limit,
+        }

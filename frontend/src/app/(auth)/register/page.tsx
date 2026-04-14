@@ -104,7 +104,7 @@ export default function RegisterPage() {
       >
         <div className="mb-6">
           <h1 className="font-syne text-2xl font-700 text-white tracking-tight">Create account</h1>
-          <p className="text-sm text-zinc-500 mt-1">AI-powered biotech research intelligence</p>
+          <p className="text-sm text-zinc-500 mt-1">Free forever · 20 searches/day · no credit card</p>
         </div>
 
         <form

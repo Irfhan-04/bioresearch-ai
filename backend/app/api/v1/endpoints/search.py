@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.deps import get_current_active_user, get_db
+from app.core.deps import check_search_quota, get_current_active_user, get_db, get_optional_user
 from app.models.search import Search
 from app.models.user import User
 from app.schemas.base import (MessageResponse, PaginatedResponse,
@@ -35,12 +35,13 @@ logger = logging.getLogger(__name__)
     "",
     response_model=dict,
     summary="Execute search",
-    description="Semantic + hybrid search for researchers across data sources",
+    description="Semantic + hybrid search. Guest: 3/day. Registered (free): 20/day.",
 )
 async def execute_search(
     search_data: SearchCreate,
     request: Request,
-    current_user: User = Depends(get_current_active_user),
+    quota: dict = Depends(check_search_quota),          # enforces daily limit
+    current_user: Optional[User] = Depends(get_optional_user),  # None for guests
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -81,6 +82,7 @@ async def execute_search(
         if not semantic_hits:
             return {
                 **pubmed_results,
+                "quota": quota,
                 "semantic_search_available": False,
                 "message": (
                     f"Found {pubmed_results['results_count']} results. "
@@ -132,6 +134,7 @@ async def execute_search(
             "query": query,
             "results_count": len(ranked_researchers),
             "researchers_created": pubmed_results.get("researchers_created", 0),
+            "quota": quota,
             "semantic_search_available": True,
             "researchers": ranked_researchers,
             "message": (
