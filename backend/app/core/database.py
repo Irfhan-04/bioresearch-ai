@@ -187,14 +187,12 @@ async def close_db() -> None:
 
 def init_db_sync() -> None:
     """
-    Synchronous database initialization
-    Used by Alembic and scripts
+    Synchronous database initialization — connectivity check only.
+    Schema is managed by Alembic migrations.
     """
-    # Import all models
-    from app.models import export, researcher, search, user
-
-    # Create all tables
-    Base.metadata.create_all(bind=sync_engine)
+    from app.models import export, researcher, search, user  # noqa: F401
+    # No create_all — Alembic manages schema
+    pass
 
 
 # ============================================================================
