@@ -15,6 +15,7 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.v1.api import api_router
+from app.api.v1.health import router as health_router
 from app.core.cache import close_redis, get_async_redis
 from app.core.config import settings
 from app.core.database import check_db_connection, close_db, init_db
@@ -49,7 +50,6 @@ async def lifespan(app: FastAPI):
     logger.info("Starting BioResearch AI...")
 
     # ── Step 1: Run Alembic migrations ────────────────────────────────────────
-    # Safe to run on every startup — Alembic is idempotent (skips applied migrations).
     try:
         import subprocess
         result = subprocess.run(
@@ -58,25 +58,25 @@ async def lifespan(app: FastAPI):
             text=True,
             cwd="/app",  # Render working directory
         )
-        if result.returncode == 0:
-            logger.info("✅ Alembic migrations applied")
-            if result.stdout:
-                logger.info(result.stdout.strip())
-        else:
+        if result.returncode != 0:
             logger.error(f"❌ Alembic migration failed:\n{result.stderr}")
+            raise RuntimeError("Alembic migration failed")
+        logger.info("✅ Alembic migrations applied")
     except Exception as e:
         logger.error(f"❌ Could not run migrations: {e}")
+        raise
 
     # ── Step 2: Database connection check ─────────────────────────────────────
     try:
         await init_db()
         is_connected = await check_db_connection()
-        if is_connected:
-            logger.info("✅ Database connection established")
-        else:
+        if not is_connected:
             logger.error("❌ Database connection failed")
+            raise RuntimeError("Database connection failed")
+        logger.info("✅ Database connection established")
     except Exception as e:
         logger.error(f"❌ Database initialization failed: {e}")
+        raise
 
     # ── Step 3: Redis connection check ────────────────────────────────────────
     try:
@@ -85,6 +85,7 @@ async def lifespan(app: FastAPI):
         logger.info("✅ Redis connection established")
     except Exception as e:
         logger.error(f"❌ Redis connection failed: {e}")
+        raise
 
     # ── Step 4: Auto-create superuser ─────────────────────────────────────────
     try:
@@ -92,11 +93,9 @@ async def lifespan(app: FastAPI):
         await create_superuser_if_missing()
     except Exception as e:
         logger.error(f"❌ Superuser creation failed: {e}")
+        # Not critical, log and continue
 
     # ── Step 5: Seed demo data (only if SEED_ON_STARTUP=true) ─────────────────
-    # After first successful seed: set SEED_ON_STARTUP=false in Render env vars.
-    # The seed script is idempotent (skips duplicates) but hitting PubMed on
-    # every boot wastes startup time and may trigger rate limits.
     if settings.SEED_ON_STARTUP:
         logger.info("SEED_ON_STARTUP=true — seeding demo researchers...")
         try:
@@ -107,15 +106,39 @@ async def lifespan(app: FastAPI):
                 text=True,
                 cwd="/app",
             )
-            if result.returncode == 0:
-                logger.info("✅ Demo seed complete")
-                logger.info(result.stdout.strip())
-            else:
+            if result.returncode != 0:
                 logger.error(f"❌ Seed failed:\n{result.stderr}")
+                raise RuntimeError("Seed failed")
+            logger.info("✅ Demo seed complete")
         except Exception as e:
             logger.error(f"❌ Could not run seed script: {e}")
+            raise
     else:
         logger.info("SEED_ON_STARTUP=false — skipping demo seed")
+
+    # ── Step 6: Check ML Model ────────────────────────────────────────────────
+    try:
+        from app.services.scoring_service import get_scoring_service
+        service = get_scoring_service()
+        if not service._model_loaded:
+            logger.error("❌ ML model not loaded")
+            raise RuntimeError("ML model not loaded")
+        logger.info(f"✅ ML model loaded ({service._model_type})")
+    except Exception as e:
+        logger.error(f"❌ ML model check failed: {e}")
+        raise
+
+    # ── Step 7: Check ChromaDB ────────────────────────────────────────────────
+    try:
+        from app.services.embedding_service import get_embedding_service
+        service = get_embedding_service()
+        count = service.get_index_count()
+        if count == 0:
+            logger.warning("⚠️ ChromaDB is empty — no researchers indexed")
+        logger.info(f"✅ ChromaDB OK ({count} researchers indexed)")
+    except Exception as e:
+        logger.error(f"❌ ChromaDB check failed: {e}")
+        raise
 
     logger.info("🚀 BioResearch AI is ready!")
     yield
@@ -268,11 +291,10 @@ async def root():
     }
 
 
-@app.get("/health")
-async def health_check():
-    """Render.com health check — must return 200 to mark the service healthy."""
-    return {"status": "ok", "service": "bioresearch-ai-backend"}
-
+@app.get("/health", include_in_schema=False)
+async def health():
+    """Redirect to health check endpoint."""
+    return {"message": "Use /health/ for detailed health checks"}
 
 
 # ============================================================================
@@ -280,6 +302,7 @@ async def health_check():
 # ============================================================================
 
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
+app.include_router(health_router, prefix="/health")
 
 
 # ============================================================================
