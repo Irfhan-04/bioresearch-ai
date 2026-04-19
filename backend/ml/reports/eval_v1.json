@@ -1,6 +1,6 @@
 {
   "model_type": "RandomForest",
-  "trained_at": "2026-04-11T05:08:46.354534Z",
+  "trained_at": "2026-04-19T07:40:25.806759Z",
   "n_training_samples": 640,
   "n_test_samples": 160,
   "test_accuracy": 0.925,

@@ -24,7 +24,6 @@ from app.schemas.base import MessageResponse, SuccessResponse
 from app.schemas.token import RefreshTokenRequest, Token
 from app.schemas.user import (PasswordReset, PasswordResetRequest, UserLogin,
                               UserProfile, UserRegister)
-from app.services.email_service import get_email_service
 
 router = APIRouter()
 
@@ -79,17 +78,6 @@ async def register(
     db.add(new_user)
     await db.commit()
     await db.refresh(new_user)
-
-    # Send welcome email (non-blocking — never prevents registration)
-    try:
-        email_service = get_email_service()
-        await email_service.send_welcome_email(
-            to_email=new_user.email,
-            user_name=new_user.full_name or new_user.email.split("@")[0],
-        )
-    except Exception as e:
-        import logging
-        logging.getLogger(__name__).warning(f"Welcome email failed for {new_user.email}: {e}")
 
     # Generate verification token
     verification_token = create_email_verification_token(new_user.email)
