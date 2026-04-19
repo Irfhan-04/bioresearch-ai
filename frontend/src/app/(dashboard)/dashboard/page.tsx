@@ -84,7 +84,7 @@ export default function DashboardPage() {
         <div className="rounded-xl border border-border bg-surface p-6">
           <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-text-muted">Model Status</h2>
           <dl className="space-y-3 text-sm">
-            <div className="flex justify-between"><dt className="text-text-muted">Algorithm</dt><dd className="font-mono text-text-primary">{stats?.model_version ?? 'XGBoost v1'}</dd></div>
+            <div className="flex justify-between"><dt className="text-text-muted">Algorithm</dt><dd className="font-mono text-text-primary">{stats?.model_version ?? 'RandomForest v1'}</dd></div>
             <div className="flex justify-between"><dt className="text-text-muted">Last Trained</dt><dd className="font-mono text-text-primary">{stats?.model_trained_at ? new Date(stats.model_trained_at).toLocaleDateString() : '—'}</dd></div>
             <div className="flex justify-between"><dt className="text-text-muted">Training Samples</dt><dd className="font-mono text-text-primary">{stats?.n_training_samples ?? 800}</dd></div>
             <div className="flex justify-between"><dt className="text-text-muted">Macro F1</dt><dd className="font-mono text-teal-400">{stats?.macro_f1 ? stats.macro_f1.toFixed(3) : '—'}</dd></div>
