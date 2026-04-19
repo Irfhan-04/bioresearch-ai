@@ -11,7 +11,6 @@ export const ROUTES = {
   RESEARCHERS: '/dashboard/researchers',
   SEARCH: '/dashboard/search',
   SCORING: '/dashboard/scoring',
-  EXPORTS: '/dashboard/exports',
   SETTINGS: '/settings',
 } as const
 
