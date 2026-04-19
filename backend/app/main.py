@@ -4,6 +4,7 @@ BioResearch AI — Main API entry point
 """
 
 import logging
+import os
 import time
 from contextlib import asynccontextmanager
 
@@ -50,21 +51,27 @@ async def lifespan(app: FastAPI):
     logger.info("Starting BioResearch AI...")
 
     # ── Step 1: Run Alembic migrations ────────────────────────────────────────
-    try:
-        import subprocess
-        result = subprocess.run(
-            ["python", "-m", "alembic", "upgrade", "head"],
-            capture_output=True,
-            text=True,
-            cwd="/app",  # Render working directory
-        )
-        if result.returncode != 0:
-            logger.error(f"❌ Alembic migration failed:\n{result.stderr}")
-            raise RuntimeError("Alembic migration failed")
-        logger.info("✅ Alembic migrations applied")
-    except Exception as e:
-        logger.error(f"❌ Could not run migrations: {e}")
-        raise
+    # NOTE: This subprocess block uses Render's /app path.
+    # In local dev, run: cd backend && alembic upgrade head (once manually).
+    # Keep this enabled only for Render deploys.
+    if os.environ.get("RENDER"):
+        try:
+            import subprocess
+            result = subprocess.run(
+                ["python", "-m", "alembic", "upgrade", "head"],
+                capture_output=True,
+                text=True,
+                cwd="/app",
+            )
+            if result.returncode != 0:
+                logger.error(f"❌ Alembic migration failed:\n{result.stderr}")
+                raise RuntimeError("Alembic migration failed")
+            logger.info("✅ Alembic migrations applied")
+        except Exception as e:
+            logger.error(f"❌ Could not run migrations: {e}")
+            raise
+    else:
+        logger.info("⏭️  Skipping auto-migration (not on Render)")
 
     # ── Step 2: Database connection check ─────────────────────────────────────
     try:
