@@ -87,17 +87,15 @@ async def lifespan(app: FastAPI):
         raise
 
     # ── Step 3: Redis connection check ────────────────────────────────────────
-    # Redis is optional for boot. If unavailable, the API still starts and
-    # serves core endpoints, while cache/rate-limit features run degraded.
+    # Redis remains a startup requirement until request paths fully tolerate
+    # cache outages without turning them into user-facing 500 errors.
     try:
         redis = await get_async_redis()
         await redis.ping()
         logger.info("✅ Redis connection established")
     except Exception as e:
-        logger.warning(
-            f"⚠️ Redis connection failed (non-fatal): {e}. "
-            "Continuing startup in degraded mode."
-        )
+        logger.error(f"❌ Redis connection failed: {e}")
+        raise RuntimeError("Redis connection failed") from e
 
     # ── Step 4: Auto-create superuser ─────────────────────────────────────────
     try:
