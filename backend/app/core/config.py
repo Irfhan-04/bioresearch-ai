@@ -123,7 +123,9 @@ class Settings(BaseSettings):
     SUPABASE_STORAGE_BUCKET: str = "exports"
 
     # ── PubMed / NCBI Entrez ─────────────────────────────────────────────────
-    PUBMED_EMAIL: str
+    # Optional at deploy time; required by NCBI policy when making real requests.
+    # We keep a safe default so missing env vars do not crash app startup.
+    PUBMED_EMAIL: str = "noreply@bioresearch.ai"
     PUBMED_API_KEY: Optional[str] = None
     PUBMED_DEFAULT_YEARS_BACK: int = 3
     PUBMED_MAX_RESULTS_PER_QUERY: int = 50
