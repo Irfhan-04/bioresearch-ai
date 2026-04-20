@@ -170,4 +170,5 @@ dependencies = [
     "xgboost==2.0.3",
     "shap==0.44.1",
     "google-genai>=1.0.0",
+    "gunicorn>=25.3.0",
 ]

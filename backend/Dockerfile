@@ -27,7 +27,7 @@ RUN mkdir -p /app/chromadb_store
 
 EXPOSE 8000
 
-CMD ["gunicorn", "app.main:app", "--worker-class", "uvicorn.workers.UvicornWorker", "--workers", "1", "--bind", "0.0.0.0:8000", "--timeout", "0", "--keep-alive", "5", "--graceful-timeout", "30"]
+#CMD ["gunicorn", "app.main:app", "--worker-class", "uvicorn.workers.UvicornWorker", "--workers", "1", "--bind", "0.0.0.0:8000", "--timeout", "0", "--keep-alive", "5", "--graceful-timeout", "30"]
 
 # Alternative start command for debugging (no worker timeout):
-# CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
