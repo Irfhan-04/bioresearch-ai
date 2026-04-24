@@ -9,8 +9,16 @@ LLM intelligence output (Component 3), and SHAP feature contributions (Component
 
 import uuid
 
-from sqlalchemy import (Boolean, Column, DateTime, Float, ForeignKey, Integer,
-                        String, Text)
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -107,50 +115,81 @@ class Researcher(Base):
     website = Column(String(500), nullable=True)
 
     # ── ML Relevance Scoring — Components 1 + 4 ───────────────────────────────
-    relevance_score = Column(Integer, nullable=True, index=True,
-        comment="0–100 score from RandomForest classifier")
+    relevance_score = Column(
+        Integer,
+        nullable=True,
+        index=True,
+        comment="0–100 score from RandomForest classifier",
+    )
     rank = Column(Integer, nullable=True, index=True)
-    relevance_tier = Column(String(20), nullable=True,
-        comment="HIGH / MEDIUM / LOW — predicted class from ML model")
-    relevance_confidence = Column(Float, nullable=True,
-        comment="Model probability for predicted tier")
-    shap_contributions = Column(JSONB, nullable=True,
-        comment="Top 5 SHAP feature contributions — drives ScoreExplanationCard UI")
+    relevance_tier = Column(
+        String(20),
+        nullable=True,
+        comment="HIGH / MEDIUM / LOW — predicted class from ML model",
+    )
+    relevance_confidence = Column(
+        Float, nullable=True, comment="Model probability for predicted tier"
+    )
+    shap_contributions = Column(
+        JSONB,
+        nullable=True,
+        comment="Top 5 SHAP feature contributions — drives ScoreExplanationCard UI",
+    )
 
     # ── Semantic Embeddings — Component 2 ─────────────────────────────────────
-    abstract_text = Column(Text, nullable=True,
-        comment="Raw PubMed abstract — source for embedding_service")
-    abstract_embedding_id = Column(String(255), nullable=True,
-        comment="ChromaDB document ID for this researcher")
-    abstract_relevance_score = Column(Float, nullable=True,
+    abstract_text = Column(
+        Text,
+        nullable=True,
+        comment="Raw PubMed abstract — source for embedding_service",
+    )
+    abstract_embedding_id = Column(
+        String(255), nullable=True, comment="ChromaDB document ID for this researcher"
+    )
+    abstract_relevance_score = Column(
+        Float,
+        nullable=True,
         comment=(
             "Cosine similarity vs default biotech query, stored at enrichment time. "
             "Used as ML feature 12. NOT the per-query semantic score."
-        ))
+        ),
+    )
 
     # ── Research Area Classifier — Component 2 dependency ─────────────────────
-    research_area = Column(String(100), nullable=True,
+    research_area = Column(
+        String(100),
+        nullable=True,
         comment=(
             "Output of research_area_classifier.py: "
             "toxicology / drug_safety / drug_discovery / "
             "preclinical / organoids / in_vitro / biomarkers / general_biotech"
-        ))
-    domain_coverage_score = Column(Float, nullable=True,
-        comment="Domain keyword coverage across title + abstract — ML feature 11")
+        ),
+    )
+    domain_coverage_score = Column(
+        Float,
+        nullable=True,
+        comment="Domain keyword coverage across title + abstract — ML feature 11",
+    )
 
     # ── LLM Intelligence — Component 3 (Gemini 2.0 Flash) ────────────────────
-    intelligence = Column(JSONB, nullable=True,
+    intelligence = Column(
+        JSONB,
+        nullable=True,
         comment=(
             "Structured JSON from intelligence_service: "
             "research_summary, domain_significance, research_connections, "
             "key_topics, research_area_tags, activity_level, data_gaps"
-        ))
-    intelligence_generated_at = Column(DateTime(timezone=True), nullable=True,
-        comment="Timestamp for Redis cache invalidation")
+        ),
+    )
+    intelligence_generated_at = Column(
+        DateTime(timezone=True),
+        nullable=True,
+        comment="Timestamp for Redis cache invalidation",
+    )
 
     # ── Contact discovery ─────────────────────────────────────────────────────
-    contact_confidence = Column(Float, nullable=True,
-        comment="Confidence of contact discovery (0–1)")
+    contact_confidence = Column(
+        Float, nullable=True, comment="Confidence of contact discovery (0–1)"
+    )
 
     # ── Publication metadata (PubMed) ─────────────────────────────────────────
     recent_publication = Column(Boolean, default=False)
@@ -164,21 +203,35 @@ class Researcher(Base):
     uses_3d_models = Column(Boolean, default=False)
 
     # ── Enrichment metadata ───────────────────────────────────────────────────
-    data_sources = Column(JSONB, default=list, nullable=False,
-        comment='Array of source identifiers e.g. ["pubmed", "hunter.io"]')
+    data_sources = Column(
+        JSONB,
+        default=list,
+        nullable=False,
+        comment='Array of source identifiers e.g. ["pubmed", "hunter.io"]',
+    )
     enrichment_data = Column(JSONB, default=dict, nullable=False)
     custom_fields = Column(JSONB, default=dict, nullable=False)
     tags = Column(JSONB, default=list, nullable=False)
     notes = Column(Text, nullable=True)
-    status = Column(String(50), default="NEW", nullable=False, index=True,
-        comment="NEW / REVIEWING / NOTED / CONTACTED / ARCHIVED")
+    status = Column(
+        String(50),
+        default="NEW",
+        nullable=False,
+        index=True,
+        comment="NEW / REVIEWING / NOTED / CONTACTED / ARCHIVED",
+    )
 
     # ── Timestamps ────────────────────────────────────────────────────────────
     last_contacted_at = Column(DateTime(timezone=True), nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now(),
-                        nullable=False, index=True)
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(),
-                        onupdate=func.now(), nullable=False)
+    created_at = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
 
     # ── Relationships ─────────────────────────────────────────────────────────
     user = relationship("User", back_populates="researchers", foreign_keys=[user_id])
@@ -231,6 +284,18 @@ class Researcher(Base):
         if not self.enrichment_data:
             self.enrichment_data = {}
         self.enrichment_data[enrichment_type] = data
+
+    def set_custom_field(self, key: str, value):
+        """Set a user-defined custom field on the researcher."""
+        if not self.custom_fields:
+            self.custom_fields = {}
+        self.custom_fields[key] = value
+
+    def get_custom_field(self, key: str, default=None):
+        """Get a user-defined custom field value or `default` if missing."""
+        if not self.custom_fields:
+            return default
+        return self.custom_fields.get(key, default)
 
     def to_dict(self) -> dict:
         """Convert researcher to dict (used for CSV exports)."""
