@@ -56,9 +56,43 @@ async def lifespan(app: FastAPI):
     # In local dev, run: cd backend && alembic upgrade head (once manually).
     # Keep this enabled only for Render deploys.
     if os.environ.get("RENDER"):
-        try:
-            import subprocess
+        import subprocess
+        import time
 
+        # ── Pre-flight: wait for DB to accept connections ─────────────────────────
+        logger.info("Checking DB reachability before migrations...")
+        MAX_WAIT = 60  # seconds total
+        INTERVAL = 5  # seconds between attempts
+        waited = 0
+        db_ready = False
+        while waited < MAX_WAIT:
+            check = subprocess.run(
+                [
+                    "python",
+                    "-c",
+                    "from app.core.database import check_db_connection_sync; "
+                    "import sys; sys.exit(0 if check_db_connection_sync() else 1)",
+                ],
+                capture_output=True,
+                text=True,
+                cwd="/app",
+            )
+            if check.returncode == 0:
+                db_ready = True
+                logger.info(f"✅ DB reachable after {waited}s")
+                break
+            logger.warning(
+                f"⏳ DB not ready yet ({waited}s elapsed), retrying in {INTERVAL}s..."
+            )
+            time.sleep(INTERVAL)
+            waited += INTERVAL
+
+        if not db_ready:
+            logger.error("❌ DB never became reachable. Aborting migrations.")
+            raise RuntimeError("Database unreachable at startup")
+
+        # ── Run Alembic upgrade ───────────────────────────────────────────────────
+        try:
             result = subprocess.run(
                 ["python", "-m", "alembic", "upgrade", "head"],
                 capture_output=True,
@@ -68,7 +102,6 @@ async def lifespan(app: FastAPI):
             if result.returncode != 0:
                 logger.error(f"❌ Alembic migration failed:\n{result.stderr}")
                 logger.info("Stamping Alembic head and retrying upgrade...")
-                # Try stamping the DB to the current head and run upgrade again
                 stamp = subprocess.run(
                     ["python", "-m", "alembic", "stamp", "head"],
                     capture_output=True,
@@ -78,8 +111,6 @@ async def lifespan(app: FastAPI):
                 if stamp.returncode != 0:
                     logger.error(f"❌ Alembic stamp failed:\n{stamp.stderr}")
                     raise RuntimeError("Alembic stamp failed")
-
-                # Retry upgrade after stamping
                 retry = subprocess.run(
                     ["python", "-m", "alembic", "upgrade", "head"],
                     capture_output=True,

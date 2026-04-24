@@ -21,7 +21,9 @@ from pydantic_settings import (
 def get_ipv4_address(hostname: str) -> str:
     """Resolve hostname to IPv4 address (required for Supabase on some hosting envs)."""
     try:
-        addr_info = socket.getaddrinfo(hostname, None, socket.AF_INET, socket.SOCK_STREAM)
+        addr_info = socket.getaddrinfo(
+            hostname, None, socket.AF_INET, socket.SOCK_STREAM
+        )
         if addr_info:
             ipv4 = addr_info[0][4][0]
             print(f"[OK] Resolved {hostname} → {ipv4}")
@@ -32,7 +34,9 @@ def get_ipv4_address(hostname: str) -> str:
 
 
 class CommaSeparatedOriginsMixin:
-    def prepare_field_value(self, field_name: str, field, value, value_is_complex: bool):
+    def prepare_field_value(
+        self, field_name: str, field, value, value_is_complex: bool
+    ):
         if field_name == "BACKEND_CORS_ORIGINS" and isinstance(value, str):
             stripped = value.strip()
             if stripped and not stripped.startswith("["):
@@ -66,7 +70,7 @@ class Settings(BaseSettings):
     # ── Security ─────────────────────────────────────────────────────────────
     SECRET_KEY: str = secrets.token_urlsafe(32)
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24      # 24 hours
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
     REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
 
     FRONTEND_URL: str = "https://bioresearch-ai.netlify.app"
@@ -110,6 +114,7 @@ class Settings(BaseSettings):
     SUPABASE_SERVICE_KEY: Optional[str] = None
 
     DATABASE_URL: Optional[str] = None
+    MIGRATION_DATABASE_URL: Optional[str] = None
     DATABASE_POOL_SIZE: int = 10
     DATABASE_MAX_OVERFLOW: int = 20
     DATABASE_POOL_TIMEOUT: int = 30
@@ -181,8 +186,8 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER_PASSWORD: str = "ChangeMe123!"
 
     # ── Daily search limits (no billing, two tiers) ───────────────────────────
-    GUEST_DAILY_SEARCHES: int = 3         # IP-based, no login required
-    REGISTERED_DAILY_SEARCHES: int = 20   # Free account, email + password
+    GUEST_DAILY_SEARCHES: int = 3  # IP-based, no login required
+    REGISTERED_DAILY_SEARCHES: int = 20  # Free account, email + password
 
     model_config = SettingsConfigDict(
         env_file=os.environ.get("ENV_FILE", ".env"),
@@ -198,6 +203,14 @@ settings = Settings()
 
 def get_database_url(force_ipv4: bool = None) -> str:
     """Get database URL with optional IPv4 enforcement."""
+    migration_url = settings.MIGRATION_DATABASE_URL
+    if migration_url:
+        url = migration_url
+        if url.startswith("postgresql://"):
+            url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
+        return url
+
+    # ── Fall back to DATABASE_URL (original behaviour)
     if force_ipv4 is None:
         force_ipv4 = settings.USE_IPV4_ONLY
 
@@ -230,10 +243,16 @@ def get_database_url(force_ipv4: bool = None) -> str:
             netloc = f"{parsed.username}:{parsed.password}@{ipv4}"
             if parsed.port:
                 netloc += f":{parsed.port}"
-            url = urlunparse((
-                parsed.scheme, netloc, parsed.path,
-                parsed.params, parsed.query, parsed.fragment,
-            ))
+            url = urlunparse(
+                (
+                    parsed.scheme,
+                    netloc,
+                    parsed.path,
+                    parsed.params,
+                    parsed.query,
+                    parsed.fragment,
+                )
+            )
 
     return url
 
@@ -252,6 +271,7 @@ def get_redis_url() -> str:
 
 def get_supabase_client():
     from supabase import create_client
+
     return create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
 
 

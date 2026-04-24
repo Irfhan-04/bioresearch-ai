@@ -5,8 +5,7 @@ Database configuration with IPv4 enforcement and proper connection handling
 from typing import AsyncGenerator, Generator
 
 from sqlalchemy import create_engine, event
-from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
-                                    create_async_engine)
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 from sqlalchemy.pool import NullPool, QueuePool
 
@@ -21,7 +20,7 @@ Base = declarative_base()
 # ============================================================================
 
 SYNC_CONNECT_ARGS = {
-    "connect_timeout": 10,
+    "connect_timeout": 30,
     "keepalives": 1,
     "keepalives_idle": 30,
     "keepalives_interval": 10,
@@ -228,6 +227,7 @@ async def init_db() -> None:
     async with async_engine.begin() as conn:
         # Register models with SQLAlchemy (needed for relationship resolution)
         from app.models import export, researcher, search, user  # noqa: F401
+
         # Connectivity check only — no create_all
         await conn.run_sync(lambda _: None)
 
@@ -246,6 +246,7 @@ def init_db_sync() -> None:
     Schema is managed by Alembic migrations.
     """
     from app.models import export, researcher, search, user  # noqa: F401
+
     # No create_all — Alembic manages schema
     pass
 
